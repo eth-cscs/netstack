@@ -1,0 +1,24 @@
+name: publish docs
+
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write
+jobs:
+  deploy:
+    if: github.repository == 'eth-cscs/netstack'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.12
+      - run: pip install --upgrade pip
+      - run: pip install -r requirements.txt
+      - run: rm -rf site
+      - run: mkdocs build --strict
+      - name: Deploy Docs
+        run: mkdocs gh-deploy --force
