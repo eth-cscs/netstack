@@ -15,6 +15,9 @@ plugins:
 nav:
   - Welcome: index.md
   - Tools: tools.md
+  - 'Analysis':
+    - analysis/index.md
+    - 'Analysing a uenv': analysis/uenv.md
   - Environment variables: envvars.md
   - 'Packages':
     - packages/index.md
@@ -37,6 +40,7 @@ nav:
       - 'xpmem': packages/xpmem.md
     - 'Launch':
       - 'cray-pmi': packages/cray-pmi.md
+      - 'pmix': packages/pmix.md
       - 'cray-pals': packages/cray-pals.md
       - 'slurm': packages/slurm.md
 

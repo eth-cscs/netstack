@@ -28,6 +28,19 @@ set** (prefixes `MPICH_`, `FI_`, `OFI_NCCL_`, `NCCL_`, `CXI_`, `PMI_`, `PALS_`,
 | `MPICH_VERSION_DISPLAY` | [cray-mpich][cray-mpich] | Print the MPICH/GTL version banner at startup. |
 | `MPICH_MEMORY_REPORT` | [cray-mpich][cray-mpich] | Report high-water memory use per rank. |
 
+## Open MPI — `OMPI_*`
+
+Open MPI (an alternative to Cray MPICH) is tuned through `OMPI_*` and MCA
+parameters rather than `MPICH_*`. The fabric-level `FI_*` variables below still
+apply, since Open MPI reaches Slingshot through the same [libfabric][libfabric]
+`cxi` provider.
+
+| Variable | Affects | Notes |
+|---|---|---|
+| `OMPI_MCA_pml` | [openmpi][openmpi] | Point-to-point management layer (e.g. `cm` for the OFI MTL, `ob1` for BTLs). |
+| `OMPI_MCA_mtl` / `OMPI_MCA_btl` | [openmpi][openmpi], [libfabric][libfabric] | Selects the transport — `ofi` routes over libfabric/CXI. |
+| `OMPI_MCA_opal_cuda_support` | [openmpi][openmpi], [cuda][cuda] | Force CUDA-aware support on/off. |
+
 ## libfabric — `FI_*`
 
 | Variable | Affects | Notes |
@@ -83,6 +96,7 @@ confirms the wire-up path.
 |---|---|---|
 | `PMI_RANK`, `PMI_SIZE`, `PMI_LOCAL_RANK`, `PMI_LOCAL_SIZE`, `PMI_UNIVERSE_SIZE` | [cray-pmi][cray-pmi] | Rank identity/topology for the PMI wire-up. |
 | `PMI_CONTROL_PORT`, `PMI_SHARED_SECRET`, `PMI_JOBID` | [cray-pmi][cray-pmi] | Control-plane rendezvous for process management. |
+| `PMIX_*` (`PMIX_RANK`, `PMIX_NAMESPACE`, `PMIX_SERVER_URI*`, …) | [pmix][pmix] | The PMIx equivalent, used by [Open MPI][openmpi]; set by the launcher's PMIx server. |
 | `PALS_*` (`PALS_RANKID`, `PALS_NODEID`, `PALS_APID`, …) | [cray-pals][cray-pals] | Set by the PALS launcher; per-rank/per-node identity. |
 
 ## CUDA — `CUDA_*`
@@ -96,6 +110,8 @@ confirms the wire-up path.
 
 [cray-mpich]: packages/cray-mpich.md
 [cray-gtl]: packages/cray-gtl.md
+[openmpi]: packages/openmpi.md
+[pmix]: packages/pmix.md
 [libfabric]: packages/libfabric.md
 [libcxi]: packages/libcxi.md
 [xpmem]: packages/xpmem.md

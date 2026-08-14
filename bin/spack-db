@@ -1,0 +1,255 @@
+#!/usr/bin/env -S uv run --no-refresh --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#   "rich",
+#   "tabulate",
+# ]
+# ///
+
+# vim: set syntax=python:
+
+"""Query the Spack database of a uenv (or any Spack install tree).
+
+A uenv is a Spack installation rooted at its mount point; the file
+``<mount>/.spack-db/index.json`` is the source of truth for what is installed
+and how packages depend on one another. This tool answers questions against it:
+
+    spack-db --mount /user-environment list                  # everything installed
+    spack-db --mount /user-environment list --name libfabric # filter by name
+    spack-db --mount /user-environment show libfabric        # package + direct deps
+    spack-db --mount /user-environment deps ekke44pq -t      # deps (recursively)
+    spack-db --mount /user-environment dependents libcxi     # what needs libcxi
+    spack-db --mount /user-environment owner <path-to-a-.so> # which package owns a path
+
+A package is named by full hash, unique hash prefix, or package name.
+--mount is required and names the Spack install root (a uenv's mount point); it
+may be given before or after the subcommand.
+"""
+
+import argparse
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from spackdb import SpackDB, DEPTYPES  # noqa: E402
+
+from rich import box  # noqa: E402
+from rich.console import Console  # noqa: E402
+from rich.style import Style  # noqa: E402
+from rich.table import Table  # noqa: E402
+from tabulate import tabulate  # noqa: E402
+
+
+def _origin(db, pkg):
+    # 'spack' = installed by Spack in this tree; 'external' = registered
+    # external package (prefix outside the tree, e.g. /usr).
+    return 'spack' if db.is_internal(pkg) else 'external'
+
+
+def _resolve_one(db, token):
+    """Resolve a token to exactly one package, or exit with a helpful error."""
+    matches = db.resolve(token)
+    if not matches:
+        sys.exit("no package matches '{}' in {}".format(token, db.mount))
+    if len(matches) > 1:
+        lines = ['ambiguous: {} matches {} packages:'.format(token, len(matches))]
+        for p in sorted(matches, key=lambda p: (p.name, p.version)):
+            lines.append('  {}  {}'.format(p.short(), p.label()))
+        lines.append('disambiguate with a hash or hash-prefix.')
+        sys.exit('\n'.join(lines))
+    return matches[0]
+
+
+# ---------------------------------------------------------------------------
+# rendering
+# ---------------------------------------------------------------------------
+
+def _pkg_table(db, pkgs, title=None):
+    table = Table(box=box.ROUNDED, title=title,
+                  header_style=Style(color='bright_white', bold=True),
+                  border_style=Style(color='grey50'))
+    table.add_column('Package', style='bold cyan', no_wrap=True)
+    table.add_column('Version', style='bright_green', no_wrap=True)
+    table.add_column('Hash', style='blue', no_wrap=True)
+    table.add_column('Origin', no_wrap=True)
+    table.add_column('Root', justify='center', no_wrap=True)
+    for p in pkgs:
+        origin = _origin(db, p)
+        table.add_row(
+            p.name, p.version or '-', p.short(),
+            '[bright_green]spack[/bright_green]' if origin == 'spack'
+            else '[bright_yellow]external[/bright_yellow]',
+            '[bright_white]●[/bright_white]' if p.explicit else '[dim]·[/dim]',
+        )
+    Console().print(table)
+
+
+def _pkg_rows(db, pkgs):
+    return [{'name': p.name, 'version': p.version, 'hash': p.hash,
+             'origin': _origin(db, p), 'root': p.explicit, 'prefix': p.prefix}
+            for p in sorted(pkgs, key=lambda p: (p.name or '', p.version or ''))]
+
+
+# ---------------------------------------------------------------------------
+# commands
+# ---------------------------------------------------------------------------
+
+def cmd_list(db, args):
+    internal = None
+    if args.internal:
+        internal = True
+    elif args.external:
+        internal = False
+    pkgs = db.all(name=args.name, roots_only=args.roots, internal=internal)
+    if args.format == 'json':
+        print(json.dumps(_pkg_rows(db, pkgs), indent=2))
+    else:
+        _pkg_table(db, pkgs, title='{} packages in {}'.format(len(pkgs), db.mount))
+
+
+def cmd_show(db, args):
+    pkg = _resolve_one(db, args.package)
+    edges = pkg.dep_edges()
+    if args.format == 'json':
+        print(json.dumps({
+            'name': pkg.name, 'version': pkg.version, 'hash': pkg.hash,
+            'prefix': pkg.prefix, 'origin': _origin(db, pkg),
+            'root': pkg.explicit,
+            'dependencies': [
+                {'name': n, 'hash': h, 'deptypes': list(t)} for h, n, t in edges
+            ],
+        }, indent=2))
+        return
+    console = Console()
+    console.print('[bold cyan]{}[/bold cyan]  [bright_green]{}[/bright_green]  '
+                  '[blue]{}[/blue]'.format(pkg.name, pkg.version, pkg.hash))
+    console.print('  prefix : {}'.format(pkg.prefix))
+    console.print('  origin : {}'.format(_origin(db, pkg)))
+    console.print('  root   : {}'.format('yes' if pkg.explicit else 'no'))
+    if not edges:
+        console.print('  [dim]no dependencies[/dim]')
+        return
+    table = Table(box=box.ROUNDED, title='direct dependencies',
+                  header_style=Style(color='bright_white', bold=True),
+                  border_style=Style(color='grey50'))
+    table.add_column('Dependency', style='bold cyan', no_wrap=True)
+    table.add_column('Version', style='bright_green', no_wrap=True)
+    table.add_column('Hash', style='blue', no_wrap=True)
+    table.add_column('Deptypes', style='bright_magenta', no_wrap=True)
+    for h, n, t in sorted(edges, key=lambda e: e[1] or ''):
+        dep = db.get(h)
+        table.add_row(n, dep.version if dep else '-',
+                      h[:7] if h else '-', ','.join(t))
+    console.print(table)
+
+
+def _graph_cmd(db, args, direction):
+    pkg = _resolve_one(db, args.package)
+    types = args.type.split(',') if args.type else None
+    if direction == 'deps':
+        result = db.dependencies(pkg.hash, types=types, transitive=args.transitive)
+    else:
+        result = db.dependents(pkg.hash, types=types, transitive=args.transitive)
+    if args.format == 'json':
+        print(json.dumps(_pkg_rows(db, result), indent=2))
+    else:
+        rel = 'dependencies of' if direction == 'deps' else 'dependents of'
+        scope = 'transitive' if args.transitive else 'direct'
+        tfilter = ' [{}]'.format(args.type) if args.type else ''
+        _pkg_table(db, sorted(result, key=lambda p: (p.name or '', p.version or '')),
+                   title='{} {} {}{}'.format(scope, rel, pkg.label(), tfilter))
+
+
+def cmd_owner(db, args):
+    pkg = db.owner_by_hash_in_path(args.path)
+    if args.format == 'json':
+        print(json.dumps(None if not pkg else {
+            'name': pkg.name, 'version': pkg.version, 'hash': pkg.hash,
+            'prefix': pkg.prefix, 'origin': _origin(db, pkg),
+        }, indent=2))
+        return
+    if not pkg:
+        print('no package owns {}'.format(os.path.realpath(args.path)))
+        return
+    Console().print('[bold cyan]{}[/bold cyan]  [bright_green]{}[/bright_green]  '
+                    '[blue]{}[/blue]  ({})'.format(
+                        pkg.name, pkg.version, pkg.short(), _origin(db, pkg)))
+
+
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
+
+def main():
+    # Global options are accepted both before *and* after the subcommand. The
+    # main parser carries the real defaults; the per-subcommand copies use
+    # SUPPRESS so they only override when actually given after the subcommand.
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument('--mount', default=None,
+                        help='Spack install root / uenv mount point (required)')
+    common.add_argument('--format', choices=['pretty', 'json'], default='pretty')
+
+    sub_common = argparse.ArgumentParser(add_help=False)
+    sub_common.add_argument('--mount', default=argparse.SUPPRESS)
+    sub_common.add_argument('--format', choices=['pretty', 'json'],
+                            default=argparse.SUPPRESS)
+
+    def add(name, **kw):
+        kw.setdefault('parents', []).append(sub_common)
+        return sub.add_parser(name, **kw)
+
+    parser = argparse.ArgumentParser(
+        parents=[common],
+        description='Query the Spack database of a uenv / Spack install tree.')
+    sub = parser.add_subparsers(dest='command', required=True)
+
+    p_list = add('list', aliases=['ls'], help='list installed packages')
+    p_list.add_argument('--name', help='filter by package name')
+    p_list.add_argument('--roots', action='store_true',
+                        help='only explicitly-installed (root) packages')
+    p_list.add_argument('--internal', action='store_true',
+                        help='only packages installed under the mount')
+    p_list.add_argument('--external', action='store_true',
+                        help='only external/system packages')
+    p_list.set_defaults(func=cmd_list)
+
+    p_show = add('show', help='show a package and its direct deps')
+    p_show.add_argument('package', help='hash, hash-prefix, or name')
+    p_show.set_defaults(func=cmd_show)
+
+    p_deps = add('deps', help='list dependencies of a package')
+    p_deps.add_argument('package', help='hash, hash-prefix, or name')
+    p_deps.add_argument('-t', '--transitive', action='store_true')
+    p_deps.add_argument('--type', help='comma-separated deptypes to follow '
+                        '({})'.format('|'.join(DEPTYPES)))
+    p_deps.set_defaults(func=lambda db, a: _graph_cmd(db, a, 'deps'))
+
+    p_rdeps = add('dependents', aliases=['rdeps'],
+                  help='list packages that depend on a package')
+    p_rdeps.add_argument('package', help='hash, hash-prefix, or name')
+    p_rdeps.add_argument('-t', '--transitive', action='store_true')
+    p_rdeps.add_argument('--type', help='comma-separated deptypes to follow')
+    p_rdeps.set_defaults(func=lambda db, a: _graph_cmd(db, a, 'dependents'))
+
+    p_own = add('owner', aliases=['which'], help='which package owns a path')
+    p_own.add_argument('path', help='a file or directory path')
+    p_own.set_defaults(func=cmd_owner)
+
+    args = parser.parse_args()
+
+    if not getattr(args, 'mount', None):
+        parser.error('--mount is required (the Spack install root / uenv mount '
+                     'point, e.g. --mount /user-environment)')
+
+    db = SpackDB(args.mount)
+    if not db.exists():
+        sys.exit('no Spack database at {} '
+                 '(is a uenv mounted, or --mount correct?)'.format(db.path))
+    db._read()
+    args.func(db, args)
+
+
+if __name__ == '__main__':
+    main()

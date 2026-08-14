@@ -61,6 +61,7 @@ specific environment.
 | [cuda-driver](cuda-driver.md)       | GPU driver     | **system**      | |
 | [xpmem](xpmem.md)                   | intra-node     | **system** (kernel) | |
 | [cray-pmi](cray-pmi.md)             | launch         | user *or* system | |
+| [pmix](pmix.md)                     | launch         | user            | |
 | [cray-pals](cray-pals.md)           | launch         | system          | |
 | [slurm](slurm.md)                   | launch         | **system**      | |
 

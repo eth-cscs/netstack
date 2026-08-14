@@ -1,13 +1,21 @@
 # Tools
 
-Two reporters live in `bin/`. Both are self-contained
+Three tools live in `bin/`, all self-contained
 [`uv`](https://docs.astral.sh/uv/) scripts (a `#!/usr/bin/env -S uv run` shebang
-with an inline dependency block) — run them directly, no virtualenv needed.
+with an inline dependency block) — run them directly, no virtualenv needed:
 
-Each supports three output formats:
+| Tool | Reports | Run |
+|---|---|---|
+| `system-stack` | system half (RPM-based) | on a login / compute node |
+| `user-stack`   | user half of a loaded uenv | inside `uenv run` |
+| `spack-db`     | a uenv's Spack package database | inside `uenv run` (or `--mount`) |
+
+`user-stack` and `spack-db` share a small importable module, `bin/spackdb.py`,
+that reads the Spack database. Output formats:
 
 - `--format pretty` (default) — a coloured table for the terminal;
-- `--format markdown` — GitHub-flavoured tables (used to generate these docs);
+- `--format markdown` — GitHub-flavoured tables (used to generate these docs;
+  `system-stack` / `user-stack` only);
 - `--format json` — machine-readable, for downstream tooling.
 
 ## `system-stack` — the system half
@@ -32,9 +40,14 @@ base system, not user-land.
 ## `user-stack` — the user half
 
 Reports the **user components** of a *loaded uenv view*: MPI, GTL, libfabric and
-its providers, libcxi, NCCL, aws-ofi-nccl, the CUDA runtime, XPMEM, PMI and
-PALS — with the version of each, whether it is uenv- or host-provided, and how
-the loader found it.
+its providers, libcxi, NCCL, aws-ofi-nccl, the CUDA runtime, XPMEM, and the
+launch stack (PMI / PMIx / PALS) — with the version of each, whether it is uenv-
+or host-provided, and how the loader found it.
+
+MPI detection is **flavour-aware**: it recognises Cray MPICH, Open MPI, and
+upstream MPICH from the resolved Spack store directory, and reports the
+launch/GPU components that match — [cray-gtl][cray-gtl] + [cray-pmi][cray-pmi] +
+[cray-pals][cray-pals] for Cray MPICH, or [pmix][pmix] for Open MPI.
 
 Run it **inside** a uenv (see the [test-uenv](#) skill):
 
@@ -44,63 +57,65 @@ $ uenv run --view=default prgenv-gnu/25.11:v1 -- ./bin/user-stack
 
 Example (`prgenv-gnu/25.11:v1`):
 
-| Component    | Version   | Origin | Found via    | Role |
-|--------------|-----------|--------|--------------|------|
-| cray-mpich   | 8.1.32    | uenv   | view         | MPI (Cray MPICH, ABI-compatible MPICH 3.4a2) |
-| cray-gtl     | 8.1.32    | uenv   | rpath        | GPU transport layer (GPU-aware MPI) |
-| libfabric    | 2.3.1     | uenv   | rpath        | OFI fabric abstraction |
-| libcxi       | 1.5.0     | uenv   | rpath        | Slingshot (CXI) user-space library |
-| nccl         | 2.28.3    | uenv   | view         | GPU collectives |
-| aws-ofi-nccl | 1.16.3    | uenv   | view         | NCCL ↔ libfabric transport plugin |
-| cuda         | 12.9.0    | uenv   | rpath        | CUDA runtime (toolkit) |
-| cuda-driver  | 590.48.01 | host   | default path | CUDA driver (userspace stub) |
-| xpmem        | –         | host   | ld.so.conf   | intra-node shared memory |
-| cray-pmi     | 6.1.15    | uenv   | rpath        | process management interface |
-| cray-pals    | –         | absent | –            | application launch service |
+| Component    | Version   | Origin | Found via    | Hash    | Role |
+|--------------|-----------|--------|--------------|---------|------|
+| cray-mpich   | 8.1.32    | uenv   | view         | j4gnffa | MPI (Cray MPICH, ABI-compatible MPICH 3.4a2) |
+| cray-gtl     | 8.1.32    | uenv   | rpath        | 3ixenfp | GPU transport layer (GPU-aware MPI) |
+| libfabric    | 2.3.1     | uenv   | rpath        | ekke44p | OFI fabric abstraction |
+| libcxi       | 1.5.0     | uenv   | rpath        | o5yivpa | Slingshot (CXI) user-space library |
+| nccl         | 2.28.3    | uenv   | view         | 2s7ijuj | GPU collectives |
+| aws-ofi-nccl | 1.16.3    | uenv   | view         | lkkfflf | NCCL ↔ libfabric transport plugin |
+| cuda         | 12.9.0    | uenv   | rpath        | amizf2z | CUDA runtime (toolkit) |
+| cuda-driver  | 590.48.01 | host   | default path | –       | CUDA driver (userspace stub) |
+| xpmem        | –         | host   | ld.so.conf   | –       | intra-node shared memory |
+| cray-pmi     | 6.1.15    | uenv   | rpath        | r3hwks4 | process management interface |
+| cray-pals    | –         | absent | –            | –       | application launch service |
+
+The **Hash** column is the Spack dag-hash of the package that owns each in-uenv
+library (blank for host / absent) — the authoritative identity, obtained from
+the uenv's Spack database. Below the components, `user-stack` also prints a
+**Slingshot build provenance** table: the [cassini-headers][cassini-headers] and
+[cxi-driver][cxi-driver] each uenv-provided [libfabric][libfabric] / [libcxi][libcxi]
+was *built against* — a build-time fact invisible to `ldd`.
 
 The same command against `prgenv-gnu/25.6:v2` reports **libfabric 1.22.0
 (host)** and **libcxi (host)** instead — the same view name, a different stack.
 That contrast is the whole point of the tool.
 
-## How provenance is determined
+## `spack-db` — querying the Spack database
 
-Provenance (`uenv` vs `host`) is **never** inferred from a library's name. For
-each component `user-stack`:
+A uenv is a Spack installation rooted at its mount point; `spack-db` answers
+questions against its database (`<mount>/.spack-db/index.json`) — the source of
+truth for versions and dependencies that `user-stack` uses to enrich its report.
 
-1. picks an *anchor* library that is actually on the view path (the MPI library,
-   `libnccl`, the aws-ofi-nccl plugin);
-2. resolves its full dependency tree with
-   [`libtree -p`](https://github.com/haampie/libtree) — which reads the ELF
-   statically (no execution, unlike `ldd`) and annotates **how** each library
-   was found: `rpath`, `runpath`, `LD_LIBRARY_PATH`, `default path`,
-   `ld.so.conf`;
-3. for each netstack library, resolves the real path and checks whether it lies
-   under the uenv mount (`/user-environment`) → **uenv**, otherwise → **host**;
-4. extracts a version from the Spack store directory name, a version path
-   segment (e.g. `/opt/cray/libfabric/1.22.0/`), or the resolved soname.
+```console
+$ spack-db --mount /user-environment list                 # everything installed
+$ spack-db --mount /user-environment show libfabric        # package + direct deps
+$ spack-db --mount /user-environment deps libfabric -t --type link  # transitive link deps
+$ spack-db --mount /user-environment dependents libcxi     # what needs libcxi
+$ spack-db --mount /user-environment owner <path-to-a-.so> # which package owns a path
+```
 
-If `libtree` is not on `PATH` the tool falls back to `ldd`, losing only the
-"Found via" annotation.
+A package is named by full hash, unique hash prefix, or name. **`--mount` is
+required** — it names the Spack install root (a uenv's mount point) and may be
+given before or after the subcommand. `--format json` gives machine-readable
+output.
 
-!!! note "Why *Found via* matters"
-    A library on `LD_LIBRARY_PATH` is not necessarily the one that loads. In
-    `prgenv-gnu/25.6`, Cray MPICH is **rpath-pinned** to
-    `/opt/cray/libfabric/1.22.0`, even though the system default is a *different*
-    libfabric (`2.3.1`). Only the resolved path and its search mechanism tell
-    you what actually runs.
+## How environments are analysed
 
-## Version namespaces — a caveat
+The methodology — mount/view discovery, runtime resolution with `libtree`,
+provenance-by-path, the Spack database, build provenance, and the version-
+namespace caveat — is documented under
+[Analysing an environment › Analysing a uenv][uenv-analysis]. That section is
+uenv-specific by design; container and Python-environment support will be added
+alongside it.
 
-The two tools can legitimately disagree on a version, because they report
-different **numbering schemes**:
-
-- `system-stack` reports the **RPM package version** (e.g.
-  `cray-libcxi-1.0.2-SHS13.1.0`);
-- `user-stack` reports the **shared-object (soname) version** it resolves (e.g.
-  `libcxi.so.1.5.0`).
-
-For [libcxi][libcxi] these are `1.0.2` and `1.5.0` respectively — both correct,
-in different namespaces. When comparing across the two tools, compare like with
-like (paths, or the SHS release).
-
+[libfabric]: packages/libfabric.md
 [libcxi]: packages/libcxi.md
+[cassini-headers]: packages/cassini-headers.md
+[cxi-driver]: packages/cxi-driver.md
+[cray-gtl]: packages/cray-gtl.md
+[cray-pmi]: packages/cray-pmi.md
+[cray-pals]: packages/cray-pals.md
+[pmix]: packages/pmix.md
+[uenv-analysis]: analysis/uenv.md

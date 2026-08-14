@@ -1,1 +1,3 @@
 spack-packages
+__pycache__/
+*.pyc

@@ -52,8 +52,8 @@ The same library name can therefore fall on either side depending on how the
 environment is built. `prgenv-gnu/25.11` ships its own [libfabric][libfabric]
 and [libcxi][libcxi] (user-provided); `prgenv-gnu/25.6` uses the host copies of
 both. **Provenance is never guessed from a name** — it is established by
-resolving the path the dynamic loader actually uses. See
-[How provenance is determined][tools].
+resolving the path the dynamic loader actually uses, and cross-checked against
+the uenv's Spack database. See [Analysing a uenv][analysis].
 
 ## The components
 
@@ -86,7 +86,8 @@ Two flat lists, expanded per-package under [Packages][packages]:
 | [aws-ofi-nccl][aws-ofi-nccl] | `aws-ofi-nccl`  | routes NCCL over libfabric/CXI |
 | [CUDA toolkit][cuda]         | `cuda`          | CUDA runtime + libraries |
 | [XPMEM][xpmem]               | `xpmem`         | (can be user-provided) |
-| [cray-pmi][cray-pmi]         | `cray-pmi`      | process management interface |
+| [cray-pmi][cray-pmi]         | `cray-pmi`      | process management interface (Cray MPICH) |
+| [PMIx][pmix]                 | `pmix`          | process management interface (Open MPI) |
 | [cray-pals][cray-pals]       | `cray-pals`     | application launch service |
 
 ## The tools
@@ -95,13 +96,15 @@ Two flat lists, expanded per-package under [Packages][packages]:
 |---|---|---|
 | [`bin/system-stack`][tools] | system half (RPM-based) | directly on a login/compute node |
 | [`bin/user-stack`][tools]   | user half of a loaded uenv | inside `uenv run` |
+| [`bin/spack-db`][tools]     | a uenv's Spack package database | inside `uenv run` (or `--mount`) |
 
-See [Tools][tools] for usage and the [test-uenv skill](#) for how to drive a
-uenv non-interactively.
+See [Tools][tools] for usage, [Analysing a uenv][analysis] for the method, and
+the [test-uenv skill](#) for how to drive a uenv non-interactively.
 
 [alps]: https://www.cscs.ch/computers/alps
 [uenv]: https://eth-cscs.github.io/uenv/
 [tools]: tools.md
+[analysis]: analysis/uenv.md
 [packages]: packages/index.md
 [envvars]: envvars.md
 [libfabric]: packages/libfabric.md
@@ -118,5 +121,6 @@ uenv non-interactively.
 [aws-ofi-nccl]: packages/aws-ofi-nccl.md
 [xpmem]: packages/xpmem.md
 [cray-pmi]: packages/cray-pmi.md
+[pmix]: packages/pmix.md
 [cray-pals]: packages/cray-pals.md
 [slurm]: packages/slurm.md

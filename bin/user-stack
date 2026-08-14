@@ -37,6 +37,10 @@ import os
 import re
 import shutil
 import subprocess
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from spackdb import SpackDB  # noqa: E402
 
 from rich import box
 from rich.console import Console
@@ -307,6 +311,47 @@ def _mpichversion(field):
     return None
 
 
+def _mpi_flavor(mpi_lib):
+    """Identify the MPI implementation: 'openmpi', 'cray-mpich', 'mpich', None.
+
+    Primary signal is the Spack store directory the MPI library resolves to
+    (`openmpi-*`, `cray-mpich-*`, `mpich-*`) — robust because view libraries are
+    symlinks into the store. Falls back to the presence of `ompi_info` /
+    `mpichversion` for non-store installs.
+    """
+    if mpi_lib:
+        real = os.path.realpath(mpi_lib)
+        if re.search(r'/openmpi-', real):
+            return 'openmpi'
+        if re.search(r'/cray-mpich-', real):
+            return 'cray-mpich'
+        if re.search(r'/mpich-', real):
+            return 'mpich'
+        # Open MPI's core library is libmpi.so.NN with no MPICH-style names.
+        if re.search(r'/libmpi\.so', real) and shutil.which('ompi_info'):
+            return 'openmpi'
+    if shutil.which('ompi_info'):
+        return 'openmpi'
+    if _mpichversion('MPICH Version'):
+        # Cray MPICH stamps a Cray-specific "Custom Information" line.
+        return 'cray-mpich' if _mpichversion('MPICH Custom Information') else 'mpich'
+    return None
+
+
+def _ompi_version():
+    """Open MPI version from `ompi_info --version`, or None."""
+    try:
+        out = subprocess.run(['ompi_info', '--version'], stdout=subprocess.PIPE,
+                             stderr=subprocess.DEVNULL)
+    except OSError:
+        return None
+    if out.returncode != 0:
+        return None
+    m = re.search(r'Open MPI\s+v?(\d+\.\d+(?:\.\d+)*)',
+                  out.stdout.decode('utf-8', 'replace'))
+    return m.group(1) if m else None
+
+
 def _fi_providers():
     """Return list of libfabric providers via `fi_info -l`, or []."""
     try:
@@ -324,11 +369,13 @@ def _fi_providers():
     return providers
 
 
-def collect_components(ident):
+def collect_components(ident, db=None):
     """Return a list of netstack component dicts.
 
-    Each dict: {name, role, version, origin, path}.
-    origin is 'uenv', 'host', or 'absent'.
+    Each dict: {name, role, version, origin, via, hash, path}.
+    origin is 'uenv', 'host', or 'absent'.  When a Spack database is available,
+    `hash` is the dag-hash of the package that owns an in-uenv library — the
+    authoritative identity that ties a loaded object back to the store.
     """
     mounts = _uenv_mounts()
     lib_dirs = _view_lib_dirs(ident)
@@ -362,32 +409,51 @@ def collect_components(ident):
     def add(name, role, path, how=None, prefer='store', version=None):
         if path is None and version is None:
             rows.append({'name': name, 'role': role, 'version': None,
-                         'origin': 'absent', 'via': None, 'path': None})
+                         'origin': 'absent', 'via': None, 'hash': None,
+                         'path': None})
             return
         origin = _origin(path, mounts) if path else 'uenv'
         v = version if version is not None else _version(name, path, prefer)
+        # Tie an in-uenv library back to its Spack package (authoritative id).
+        dag_hash = None
+        if db and path and origin == 'uenv':
+            pkg = db.owner_by_hash_in_path(path)
+            if pkg:
+                dag_hash = pkg.hash
         rows.append({'name': name, 'role': role, 'version': v,
-                     'origin': origin, 'via': how,
+                     'origin': origin, 'via': how, 'hash': dag_hash,
                      'path': os.path.realpath(path) if path else None})
 
     # --- MPI ---------------------------------------------------------------
-    mpi_lib = _find_lib(['libmpi_gnu_*.so.*', 'libmpi.so.*', 'libmpich.so*'], lib_dirs)
-    mpich_ver = _mpichversion('MPICH Version')
-    if mpi_lib and mpich_ver is not None:
-        # Cray MPICH: report the cray-mpich package version from the store path.
-        cray_ver = _version('cray-mpich', mpi_lib, 'store')
-        add('cray-mpich', 'MPI (Cray MPICH, ABI-compatible MPICH {})'.format(mpich_ver),
-            mpi_lib, how='view', version=cray_ver or mpich_ver)
+    mpi_lib = _find_lib(['libmpi_gnu_*.so.*', 'libmpi.so.*', 'libmpi.so',
+                         'libmpich.so*'], lib_dirs)
+    flavor = _mpi_flavor(mpi_lib)
+    if flavor == 'openmpi':
+        ver = _ompi_version() or _version('openmpi', mpi_lib, 'store')
+        add('openmpi', 'MPI (Open MPI)', mpi_lib, how='view', version=ver)
+    elif flavor == 'cray-mpich':
+        base = _mpichversion('MPICH Version')
+        role = ('MPI (Cray MPICH, ABI-compatible MPICH {})'.format(base)
+                if base else 'MPI (Cray MPICH)')
+        add('cray-mpich', role, mpi_lib, how='view',
+            version=_version('cray-mpich', mpi_lib, 'store') or base)
+    elif flavor == 'mpich':
+        base = _mpichversion('MPICH Version')
+        add('mpich', 'MPI (MPICH{})'.format(' ' + base if base else ''),
+            mpi_lib, how='view', version=_version('mpich', mpi_lib, 'store') or base)
     elif mpi_lib:
         add('mpi', 'MPI', mpi_lib, how='view')
     else:
         add('cray-mpich', 'MPI', None)
 
     # --- GTL (GPU transport layer) ----------------------------------------
-    gtl, how = lookup([r'libmpi_gtl_cuda'])
-    if gtl is None:
-        gtl, how = _find_lib(['libmpi_gtl_cuda.so'], lib_dirs), 'view'
-    add('cray-gtl', 'GPU transport layer (GPU-aware MPI)', gtl, how=how)
+    # Cray MPICH's GPU-aware path. Open MPI is CUDA-aware without a GTL, so the
+    # row is only meaningful (present or absent) for a Cray MPICH stack.
+    if flavor in ('cray-mpich', None):
+        gtl, how = lookup([r'libmpi_gtl_cuda'])
+        if gtl is None:
+            gtl, how = _find_lib(['libmpi_gtl_cuda.so'], lib_dirs), 'view'
+        add('cray-gtl', 'GPU transport layer (GPU-aware MPI)', gtl, how=how)
 
     # --- libfabric ---------------------------------------------------------
     # store dir gives the release (2.3.1); the soname is the ABI version.
@@ -423,15 +489,64 @@ def collect_components(ident):
     xpmem, how = lookup([r'libxpmem\.so'])
     add('xpmem', 'intra-node shared memory', xpmem, how=how, prefer='soname')
 
-    # --- PMI ---------------------------------------------------------------
-    pmi, how = lookup([r'libpmi\.so', r'libpmi2\.so'])
-    add('cray-pmi', 'process management interface', pmi, how=how, prefer='store')
+    # --- process management ------------------------------------------------
+    # PMIx (Open MPI and anything using it); Cray PMI + PALS (Cray MPICH).
+    pmix, how = lookup([r'libpmix\.so'])
+    if pmix is None:
+        pmix, how = _find_lib(['libpmix.so.*'], lib_dirs), 'view'
+    if pmix is not None:
+        add('pmix', 'process management interface (PMIx)', pmix, how=how,
+            prefer='soname')
 
-    # --- PALS --------------------------------------------------------------
-    pals = _find_lib(['libpals.so*', 'libpmi2_pals.so*'], lib_dirs)
-    add('cray-pals', 'application launch service', pals, how='view', prefer='store')
+    pmi, how = lookup([r'libpmi\.so', r'libpmi2\.so'])
+    if pmi is not None or flavor in ('cray-mpich', 'mpich'):
+        add('cray-pmi', 'process management interface', pmi, how=how, prefer='store')
+
+    # PALS is the Cray launcher; only report it for a Cray MPICH stack.
+    if flavor in ('cray-mpich', None):
+        pals = _find_lib(['libpals.so*', 'libpmi2_pals.so*'], lib_dirs)
+        add('cray-pals', 'application launch service', pals, how='view',
+            prefer='store')
 
     return rows
+
+
+# Build-only / header dependencies of the Slingshot fabric libraries. These
+# never appear in a runtime dependency tree (there is no .so to load) but they
+# fix the NIC ABI a library was built against — the Spack db is the only source.
+_BUILD_PROVENANCE_OF = {'libfabric', 'libcxi'}
+_SLINGSHOT_HEADERS = {'cassini-headers', 'cxi-driver'}
+
+
+def collect_build_provenance(db, rows):
+    """What the uenv-provided fabric libraries were *built against*.
+
+    Reports the Slingshot header/driver packages ([cassini-headers],
+    [cxi-driver]) that each uenv-provided [libfabric]/[libcxi] was compiled
+    against, read from the Spack database's build/link edges. This is the fact
+    that governs compatibility with the host CXI kernel driver, and it is
+    invisible to `libtree`/`ldd`.
+    """
+    if not db:
+        return []
+    out = []
+    seen = set()
+    for r in rows:
+        if r['origin'] != 'uenv' or not r.get('hash'):
+            continue
+        if r['name'] not in _BUILD_PROVENANCE_OF:
+            continue
+        for dep in db.dependencies(r['hash'], types=('build', 'link')):
+            if dep.name in _SLINGSHOT_HEADERS and (r['name'], dep.hash) not in seen:
+                seen.add((r['name'], dep.hash))
+                out.append({
+                    'consumer': r['name'],
+                    'name': dep.name,
+                    'version': dep.version,
+                    'hash': dep.hash,
+                    'origin': 'uenv' if db.is_internal(dep) else 'external',
+                })
+    return out
 
 
 def _driver_version():
@@ -455,10 +570,12 @@ def _driver_version():
 # Netstack-relevant environment variables, grouped by the component they tune.
 ENVVAR_PATTERNS = [
     (re.compile(r'^MPICH_'),  'cray-mpich'),
+    (re.compile(r'^OMPI_'),   'openmpi'),
     (re.compile(r'^FI_'),     'libfabric'),
     (re.compile(r'^OFI_NCCL_'), 'aws-ofi-nccl'),
     (re.compile(r'^NCCL_'),   'nccl'),
     (re.compile(r'^CXI_'),    'libcxi'),
+    (re.compile(r'^PMIX_'),   'pmix'),
     (re.compile(r'^PMI_'),    'cray-pmi'),
     (re.compile(r'^PALS_'),   'cray-pals'),
     (re.compile(r'^XPMEM'),   'xpmem'),
@@ -511,6 +628,7 @@ def print_components_pretty(rows):
     table.add_column('Version', style='bright_green', no_wrap=True)
     table.add_column('Origin', no_wrap=True)
     table.add_column('Found via', style='blue', no_wrap=True)
+    table.add_column('Hash', style='blue', no_wrap=True)
     table.add_column('Role', style='white')
     for r in rows:
         origin = r['origin']
@@ -519,8 +637,25 @@ def print_components_pretty(rows):
             r['version'] or '[dim]-[/dim]',
             '[{0}]{1}[/{0}]'.format(_ORIGIN_STYLE[origin], origin),
             r['via'] or '[dim]-[/dim]',
+            (r.get('hash') or '')[:7] or '[dim]-[/dim]',
             r['role'],
         )
+    Console().print(table)
+
+
+def print_provenance_pretty(prov):
+    if not prov:
+        return
+    table = Table(box=box.ROUNDED, title='Slingshot build provenance',
+                  header_style=Style(color='bright_white', bold=True),
+                  border_style=Style(color='grey50'))
+    table.add_column('Built into', style='bold cyan', no_wrap=True)
+    table.add_column('Built against', style='bold cyan', no_wrap=True)
+    table.add_column('Version', style='bright_green')
+    table.add_column('Hash', style='blue', no_wrap=True)
+    for p in prov:
+        table.add_row(p['consumer'], p['name'], p['version'] or '-',
+                      p['hash'][:7])
     Console().print(table)
 
 
@@ -538,7 +673,7 @@ def print_envvars_pretty(rows):
     Console().print(table)
 
 
-def print_markdown(ident, providers, rows, envvars):
+def print_markdown(ident, providers, rows, envvars, provenance=None):
     print('## uenv')
     print()
     id_tbl = [[k, v] for k, v in (
@@ -553,12 +688,22 @@ def print_markdown(ident, providers, rows, envvars):
     print()
     print('## Components')
     print()
-    comp_tbl = [[r['name'], r['version'] or '-', r['origin'], r['via'] or '-', r['role']]
-                for r in rows]
+    comp_tbl = [[r['name'], r['version'] or '-', r['origin'], r['via'] or '-',
+                 (r.get('hash') or '-')[:7], r['role']] for r in rows]
     print(tabulate(comp_tbl,
-                   headers=['Component', 'Version', 'Origin', 'Found via', 'Role'],
+                   headers=['Component', 'Version', 'Origin', 'Found via',
+                            'Hash', 'Role'],
                    tablefmt='github'))
     print()
+    if provenance:
+        print('## Slingshot build provenance')
+        print()
+        prov_tbl = [[p['consumer'], p['name'], p['version'] or '-', p['hash'][:7]]
+                    for p in provenance]
+        print(tabulate(prov_tbl,
+                       headers=['Built into', 'Built against', 'Version', 'Hash'],
+                       tablefmt='github'))
+        print()
     print('## Environment variables')
     print()
     if envvars:
@@ -569,11 +714,12 @@ def print_markdown(ident, providers, rows, envvars):
         print('_none of the tracked netstack variables are set_')
 
 
-def to_json(ident, providers, rows, envvars):
+def to_json(ident, providers, rows, envvars, provenance=None):
     return {
         'uenv': ident,
         'fabric_providers': providers,
         'components': rows,
+        'build_provenance': provenance or [],
         'envvars': envvars,
     }
 
@@ -601,15 +747,30 @@ if __name__ == '__main__':
                 './bin/user-stack[/cyan]')
         raise SystemExit(1)
 
+    # Load the Spack database (source of truth for identity and build deps).
+    # Best-effort: the runtime report still works without it.
+    db = None
+    if ident.get('mount'):
+        candidate = SpackDB(ident['mount'])
+        if candidate.exists():
+            try:
+                candidate._read()
+                db = candidate
+            except (OSError, ValueError, KeyError):
+                db = None
+
     providers = _fi_providers()
-    rows = collect_components(ident)
+    rows = collect_components(ident, db)
+    provenance = collect_build_provenance(db, rows)
     envvars = collect_envvars()
 
     if args.format == 'pretty':
         print_identity_pretty(ident, providers)
         print_components_pretty(rows)
+        print_provenance_pretty(provenance)
         print_envvars_pretty(envvars)
     elif args.format == 'markdown':
-        print_markdown(ident, providers, rows, envvars)
+        print_markdown(ident, providers, rows, envvars, provenance)
     elif args.format == 'json':
-        print(json.dumps(to_json(ident, providers, rows, envvars), indent=2))
+        print(json.dumps(to_json(ident, providers, rows, envvars, provenance),
+                         indent=2))
