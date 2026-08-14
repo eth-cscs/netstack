@@ -4,3 +4,6 @@ task.md
 
 # generated docs
 site
+
+# vim working files
+.*.sw[mnopq]
