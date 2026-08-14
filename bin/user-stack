@@ -1,0 +1,615 @@
+#!/usr/bin/env -S uv run --no-refresh --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#   "rich",
+#   "tabulate",
+# ]
+# ///
+
+# vim: set syntax=python:
+
+"""Report the user-land network stack of a loaded uenv.
+
+Run this *inside* a uenv view, e.g.:
+
+    uenv run --view=default prgenv-gnu/25.11:v1 -- ./bin/user-stack
+
+It inspects the active view (the libraries actually on `PATH` /
+`LD_LIBRARY_PATH`) and reports the network-stack components — MPI, GTL,
+libfabric + providers, libcxi, NCCL, aws-ofi-nccl, the CUDA runtime, XPMEM,
+PMI, PALS — together with the version of each and, crucially, whether it is
+*provided by the uenv* or *provided by the host*.
+
+Provenance is never guessed from a library's name: for every dependency we
+resolve the path the dynamic loader actually uses (via `libtree`, falling back
+to `ldd`) and test whether it falls under the uenv mount point.  A component
+such as `libcxi` may be host-provided in one uenv and uenv-provided in another;
+only the resolved path tells the truth.  `libtree` additionally reports *how*
+each library was found (rpath, runpath, LD_LIBRARY_PATH, default search path),
+which is captured in the "Found via" column.
+"""
+
+import argparse
+import glob
+import json
+import os
+import re
+import shutil
+import subprocess
+
+from rich import box
+from rich.console import Console
+from rich.style import Style
+from rich.table import Table
+from tabulate import tabulate
+
+
+# ---------------------------------------------------------------------------
+# uenv discovery
+# ---------------------------------------------------------------------------
+
+def _uenv_mounts():
+    """Return the list of uenv mount points (e.g. ['/user-environment']).
+
+    Parsed from UENV_MOUNT_LIST, whose format is a comma-separated list of
+    `<squashfs-path>:<mount-point>` pairs.
+    """
+    raw = os.environ.get('UENV_MOUNT_LIST') or os.environ.get('SQUASHFS_MOUNT_LIST') or ''
+    mounts = []
+    for entry in raw.split(','):
+        entry = entry.strip()
+        if not entry or ':' not in entry:
+            continue
+        # squashfs path and mount point are separated by the last ':'
+        mount = entry.rsplit(':', 1)[1]
+        if mount:
+            mounts.append(mount)
+    return mounts
+
+
+def _uenv_identity():
+    """Return a dict describing the loaded uenv, or None if none is loaded."""
+    view = os.environ.get('UENV_VIEW')
+    if not view:
+        return None
+
+    ident = {
+        'label':    os.environ.get('UENV_LABEL'),
+        'name':     None,
+        'mount':    None,
+        'view':     None,
+        'arch':     None,
+        'system':   os.environ.get('CLUSTER_NAME'),
+    }
+
+    # UENV_VIEW = <mount>:<name>:<view>
+    parts = view.split(':')
+    if len(parts) == 3:
+        ident['mount'], ident['name'], ident['view'] = parts
+
+    telem = os.environ.get('UENV_TELEMETRY')
+    if telem:
+        try:
+            records = json.loads(telem)
+            if records:
+                rec = records[0]
+                ident['label'] = ident['label'] or rec.get('label')
+                ident['name'] = ident['name'] or rec.get('name')
+                ident['mount'] = ident['mount'] or rec.get('mount')
+                views = rec.get('views')
+                if views and not ident['view']:
+                    ident['view'] = views[0]
+        except (ValueError, KeyError):
+            pass
+
+    # Spack target arch = the linux-<...> directory in the store.
+    if ident['mount']:
+        for d in glob.glob(os.path.join(ident['mount'], 'linux-*')):
+            ident['arch'] = os.path.basename(d)
+            break
+
+    return ident
+
+
+def _view_lib_dirs(ident):
+    """Return the library directories of the active view (under the mount)."""
+    dirs = []
+    if ident and ident['mount'] and ident['view']:
+        base = os.path.join(ident['mount'], 'env', ident['view'])
+        for sub in ('lib', 'lib64'):
+            d = os.path.join(base, sub)
+            if os.path.isdir(d):
+                dirs.append(d)
+    # Fall back to any LD_LIBRARY_PATH entry under a mount.
+    mounts = _uenv_mounts()
+    for d in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
+        if d and os.path.isdir(d) and any(_under(d, m) for m in mounts) and d not in dirs:
+            dirs.append(d)
+    return dirs
+
+
+# ---------------------------------------------------------------------------
+# path / provenance helpers
+# ---------------------------------------------------------------------------
+
+def _under(path, root):
+    """True if `path` is `root` or lives beneath it."""
+    if not path or not root:
+        return False
+    path = os.path.realpath(path)
+    root = os.path.realpath(root)
+    return path == root or path.startswith(root + os.sep)
+
+
+def _origin(path, mounts):
+    """Classify a resolved path as 'uenv' or 'host'."""
+    if path and any(_under(path, m) for m in mounts):
+        return 'uenv'
+    return 'host'
+
+
+def _deptree(path):
+    """Return {soname: (resolved_path, how)} for a shared object.
+
+    `how` records how the dynamic loader located the library: 'rpath',
+    'runpath', 'LD_LIBRARY_PATH', 'default path', etc.
+
+    Uses `libtree -p`, which resolves ELF dependencies *statically* (without
+    executing the object, unlike ldd) and, importantly, annotates each entry
+    with the search mechanism that found it.  Falls back to `ldd` if libtree
+    is not on PATH.
+    """
+    if shutil.which('libtree'):
+        tree = _deptree_libtree(path)
+        if tree:
+            return tree
+    return _deptree_ldd(path)
+
+
+def _deptree_libtree(path):
+    """Parse `libtree -p <path>` into {soname: (resolved_path, how)}."""
+    result = {}
+    try:
+        out = subprocess.run(['libtree', '-p', path], stdout=subprocess.PIPE,
+                             stderr=subprocess.DEVNULL)
+    except OSError:
+        return result
+    if out.returncode != 0:
+        return result
+    for line in out.stdout.decode('utf-8', 'replace').splitlines():
+        # Each line is tree-drawing chars, then an absolute path, then an
+        # optional "[how]" annotation.  The root line has no annotation.
+        idx = line.find('/')
+        if idx < 0:
+            continue
+        rest = line[idx:]
+        how = None
+        m = re.search(r'\[([^\]]+)\]\s*$', rest)
+        if m:
+            how = m.group(1)
+            rest = rest[:m.start()]
+        target = rest.strip()
+        if not target.startswith('/'):
+            continue
+        soname = os.path.basename(target)
+        # Keep the shallowest occurrence (closest to the queried library).
+        result.setdefault(soname, (target, how))
+    return result
+
+
+def _deptree_ldd(path):
+    """Fallback: parse `ldd <path>` into {soname: (resolved_path, None)}."""
+    result = {}
+    try:
+        out = subprocess.run(['ldd', path], stdout=subprocess.PIPE,
+                             stderr=subprocess.DEVNULL)
+    except OSError:
+        return result
+    if out.returncode != 0:
+        return result
+    for line in out.stdout.decode('utf-8', 'replace').splitlines():
+        m = re.match(r'\s*(\S+)\s+=>\s+(/\S+)', line)
+        if m:
+            result.setdefault(m.group(1), (m.group(2), None))
+    return result
+
+
+# ---------------------------------------------------------------------------
+# version extraction
+# ---------------------------------------------------------------------------
+
+_SPACK_HASH = re.compile(r'-[a-z0-9]{32}(?:/|$)')
+
+
+def _version_from_store(name, path):
+    """Extract a version from a spack store dir `<name>-<version>-<hash>`."""
+    if not path:
+        return None
+    m = re.search(re.escape(name) + r'-(.+?)-[a-z0-9]{32}(?:/|$)', path)
+    if m:
+        return m.group(1)
+    return None
+
+
+def _version_from_path(path):
+    """Extract a version-looking path component (e.g. .../libfabric/1.22.0/...)."""
+    if not path:
+        return None
+    for part in path.split(os.sep):
+        if re.fullmatch(r'\d+\.\d+(?:\.\d+)*', part):
+            return part
+    return None
+
+
+def _version_from_soname(path):
+    """Extract a version from a resolved soname, e.g. libnccl.so.2.28.3 -> 2.28.3."""
+    if not path:
+        return None
+    real = os.path.realpath(path)
+    m = re.search(r'\.so\.(\d+(?:\.\d+)+)$', real)
+    if m:
+        return m.group(1)
+    return None
+
+
+def _version(name, path, prefer='store'):
+    """Best-effort version for a component at `path`.
+
+    `prefer` selects the first strategy to try; the rest are used as
+    fallbacks.  Strategies: 'store' (spack dir), 'path' (version path
+    segment), 'soname' (resolved .so.X.Y.Z).
+    """
+    # Resolve symlinks first: store-dir and version-path segments live on the
+    # real target, not on the view symlink that points at it.
+    real = os.path.realpath(path) if path else None
+    strategies = {
+        'store':  lambda: _version_from_store(name, real),
+        'path':   lambda: _version_from_path(real),
+        'soname': lambda: _version_from_soname(real),
+    }
+    order = [prefer] + [s for s in ('store', 'path', 'soname') if s != prefer]
+    for s in order:
+        v = strategies[s]()
+        # An all-zero soname (e.g. libxpmem.so.0.0.0) carries no real version.
+        if v and not re.fullmatch(r'0(?:\.0)*', v):
+            return v
+    return None
+
+
+# ---------------------------------------------------------------------------
+# component detection
+# ---------------------------------------------------------------------------
+
+def _find_lib(sonames, lib_dirs):
+    """Return the path of the first matching library in the view lib dirs."""
+    for d in lib_dirs:
+        for pattern in sonames:
+            hits = sorted(glob.glob(os.path.join(d, pattern)))
+            # Prefer a real file / versioned soname over a bare symlink stub.
+            for h in hits:
+                return h
+    return None
+
+
+def _mpichversion(field):
+    """Return a line from `mpichversion` output matching `field`, or None."""
+    try:
+        out = subprocess.run(['mpichversion'], stdout=subprocess.PIPE,
+                             stderr=subprocess.DEVNULL)
+    except OSError:
+        return None
+    if out.returncode != 0:
+        return None
+    for line in out.stdout.decode('utf-8', 'replace').splitlines():
+        if line.startswith(field):
+            return line.split(':', 1)[1].strip()
+    return None
+
+
+def _fi_providers():
+    """Return list of libfabric providers via `fi_info -l`, or []."""
+    try:
+        out = subprocess.run(['fi_info', '-l'], stdout=subprocess.PIPE,
+                             stderr=subprocess.DEVNULL)
+    except OSError:
+        return []
+    if out.returncode != 0:
+        return []
+    providers = []
+    for line in out.stdout.decode('utf-8', 'replace').splitlines():
+        m = re.match(r'^(\S+):\s*$', line)
+        if m:
+            providers.append(m.group(1))
+    return providers
+
+
+def collect_components(ident):
+    """Return a list of netstack component dicts.
+
+    Each dict: {name, role, version, origin, path}.
+    origin is 'uenv', 'host', or 'absent'.
+    """
+    mounts = _uenv_mounts()
+    lib_dirs = _view_lib_dirs(ident)
+
+    # Anchor libraries whose dependency tree reveals the runtime netstack.
+    anchor_globs = [
+        ['libmpi_gnu_*.so.*', 'libmpi.so.*', 'libmpi.so', 'libmpich.so*'],
+        ['libnccl.so.*'],
+        ['libnccl-net-ofi.so', 'libnccl-net.so'],
+    ]
+    anchors = [p for g in anchor_globs if (p := _find_lib(g, lib_dirs))]
+
+    # Merge the dependency trees of all anchors -> {soname: (path, how)},
+    # including the anchors themselves (found directly in the view).
+    resolved = {}
+    for a in anchors:
+        resolved.setdefault(os.path.basename(a), (a, 'view'))
+        for soname, (path, how) in _deptree(a).items():
+            resolved.setdefault(soname, (path, how))
+
+    def lookup(soname_res):
+        """Return (path, how) for the first soname matching one of the regexes."""
+        for soname, (path, how) in resolved.items():
+            for pat in soname_res:
+                if re.match(pat, soname):
+                    return path, how
+        return None, None
+
+    rows = []
+
+    def add(name, role, path, how=None, prefer='store', version=None):
+        if path is None and version is None:
+            rows.append({'name': name, 'role': role, 'version': None,
+                         'origin': 'absent', 'via': None, 'path': None})
+            return
+        origin = _origin(path, mounts) if path else 'uenv'
+        v = version if version is not None else _version(name, path, prefer)
+        rows.append({'name': name, 'role': role, 'version': v,
+                     'origin': origin, 'via': how,
+                     'path': os.path.realpath(path) if path else None})
+
+    # --- MPI ---------------------------------------------------------------
+    mpi_lib = _find_lib(['libmpi_gnu_*.so.*', 'libmpi.so.*', 'libmpich.so*'], lib_dirs)
+    mpich_ver = _mpichversion('MPICH Version')
+    if mpi_lib and mpich_ver is not None:
+        # Cray MPICH: report the cray-mpich package version from the store path.
+        cray_ver = _version('cray-mpich', mpi_lib, 'store')
+        add('cray-mpich', 'MPI (Cray MPICH, ABI-compatible MPICH {})'.format(mpich_ver),
+            mpi_lib, how='view', version=cray_ver or mpich_ver)
+    elif mpi_lib:
+        add('mpi', 'MPI', mpi_lib, how='view')
+    else:
+        add('cray-mpich', 'MPI', None)
+
+    # --- GTL (GPU transport layer) ----------------------------------------
+    gtl, how = lookup([r'libmpi_gtl_cuda'])
+    if gtl is None:
+        gtl, how = _find_lib(['libmpi_gtl_cuda.so'], lib_dirs), 'view'
+    add('cray-gtl', 'GPU transport layer (GPU-aware MPI)', gtl, how=how)
+
+    # --- libfabric ---------------------------------------------------------
+    # store dir gives the release (2.3.1); the soname is the ABI version.
+    fab, how = lookup([r'libfabric\.so'])
+    add('libfabric', 'OFI fabric abstraction', fab, how=how, prefer='store')
+
+    # --- libcxi ------------------------------------------------------------
+    cxi, how = lookup([r'libcxi\.so'])
+    add('libcxi', 'Slingshot (CXI) user-space library', cxi, how=how, prefer='soname')
+
+    # --- NCCL --------------------------------------------------------------
+    nccl, how = lookup([r'libnccl\.so\.\d'])
+    if nccl is None:
+        nccl, how = _find_lib(['libnccl.so.*'], lib_dirs), 'view'
+    add('nccl', 'GPU collectives', nccl, how=how, prefer='soname')
+
+    # --- aws-ofi-nccl ------------------------------------------------------
+    aws = _find_lib(['libnccl-net-ofi.so', 'libnccl-net.so'], lib_dirs)
+    add('aws-ofi-nccl', 'NCCL <-> libfabric transport plugin', aws,
+        how='view', prefer='store')
+
+    # --- CUDA runtime ------------------------------------------------------
+    cudart, how = lookup([r'libcudart\.so'])
+    add('cuda', 'CUDA runtime (toolkit)', cudart, how=how, prefer='store')
+
+    # --- CUDA driver -------------------------------------------------------
+    cudadrv, how = lookup([r'libcuda\.so'])
+    drv_ver = _driver_version() if cudadrv else None
+    add('cuda-driver', 'CUDA driver (userspace stub)', cudadrv,
+        how=how, prefer='soname', version=drv_ver)
+
+    # --- XPMEM -------------------------------------------------------------
+    xpmem, how = lookup([r'libxpmem\.so'])
+    add('xpmem', 'intra-node shared memory', xpmem, how=how, prefer='soname')
+
+    # --- PMI ---------------------------------------------------------------
+    pmi, how = lookup([r'libpmi\.so', r'libpmi2\.so'])
+    add('cray-pmi', 'process management interface', pmi, how=how, prefer='store')
+
+    # --- PALS --------------------------------------------------------------
+    pals = _find_lib(['libpals.so*', 'libpmi2_pals.so*'], lib_dirs)
+    add('cray-pals', 'application launch service', pals, how='view', prefer='store')
+
+    return rows
+
+
+def _driver_version():
+    """CUDA driver version from nvidia-smi, or None."""
+    try:
+        out = subprocess.run(['nvidia-smi', '--version'], stdout=subprocess.PIPE,
+                             stderr=subprocess.DEVNULL)
+    except OSError:
+        return None
+    if out.returncode != 0:
+        return None
+    m = re.search(r'DRIVER version\s*:\s*([\d.]+)',
+                  out.stdout.decode('utf-8', 'replace'), re.IGNORECASE)
+    return m.group(1) if m else None
+
+
+# ---------------------------------------------------------------------------
+# environment variables
+# ---------------------------------------------------------------------------
+
+# Netstack-relevant environment variables, grouped by the component they tune.
+ENVVAR_PATTERNS = [
+    (re.compile(r'^MPICH_'),  'cray-mpich'),
+    (re.compile(r'^FI_'),     'libfabric'),
+    (re.compile(r'^OFI_NCCL_'), 'aws-ofi-nccl'),
+    (re.compile(r'^NCCL_'),   'nccl'),
+    (re.compile(r'^CXI_'),    'libcxi'),
+    (re.compile(r'^PMI_'),    'cray-pmi'),
+    (re.compile(r'^PALS_'),   'cray-pals'),
+    (re.compile(r'^XPMEM'),   'xpmem'),
+    (re.compile(r'^CUDA_'),   'cuda'),
+]
+
+
+def collect_envvars():
+    """Return list of {name, value, component} for set netstack env vars."""
+    rows = []
+    for name, value in sorted(os.environ.items()):
+        for pat, comp in ENVVAR_PATTERNS:
+            if pat.match(name):
+                rows.append({'name': name, 'value': value, 'component': comp})
+                break
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# rendering
+# ---------------------------------------------------------------------------
+
+_ORIGIN_STYLE = {'uenv': 'bright_green', 'host': 'bright_yellow', 'absent': 'dim'}
+
+
+def print_identity_pretty(ident, providers):
+    table = Table(box=box.ROUNDED, show_header=False,
+                  border_style=Style(color='grey50'))
+    table.add_column('Key', style='bold cyan', no_wrap=True)
+    table.add_column('Value', style='bright_white')
+    for key, val in (
+        ('uenv',   ident.get('label') or ident.get('name')),
+        ('view',   ident.get('view')),
+        ('mount',  ident.get('mount')),
+        ('arch',   ident.get('arch')),
+        ('system', ident.get('system')),
+    ):
+        if val:
+            table.add_row(key, str(val))
+    if providers:
+        table.add_row('fabric providers', ', '.join(providers))
+    Console().print(table)
+
+
+def print_components_pretty(rows):
+    table = Table(box=box.ROUNDED,
+                  header_style=Style(color='bright_white', bold=True),
+                  border_style=Style(color='grey50'))
+    table.add_column('Component', style='bold cyan', no_wrap=True)
+    table.add_column('Version', style='bright_green', no_wrap=True)
+    table.add_column('Origin', no_wrap=True)
+    table.add_column('Found via', style='blue', no_wrap=True)
+    table.add_column('Role', style='white')
+    for r in rows:
+        origin = r['origin']
+        table.add_row(
+            r['name'],
+            r['version'] or '[dim]-[/dim]',
+            '[{0}]{1}[/{0}]'.format(_ORIGIN_STYLE[origin], origin),
+            r['via'] or '[dim]-[/dim]',
+            r['role'],
+        )
+    Console().print(table)
+
+
+def print_envvars_pretty(rows):
+    if not rows:
+        return
+    table = Table(box=box.ROUNDED,
+                  header_style=Style(color='bright_white', bold=True),
+                  border_style=Style(color='grey50'))
+    table.add_column('Variable', style='bold cyan', no_wrap=True)
+    table.add_column('Value', style='bright_green')
+    table.add_column('Affects', style='bright_magenta', no_wrap=True)
+    for r in rows:
+        table.add_row(r['name'], r['value'], r['component'])
+    Console().print(table)
+
+
+def print_markdown(ident, providers, rows, envvars):
+    print('## uenv')
+    print()
+    id_tbl = [[k, v] for k, v in (
+        ('uenv',   ident.get('label') or ident.get('name')),
+        ('view',   ident.get('view')),
+        ('mount',  ident.get('mount')),
+        ('arch',   ident.get('arch')),
+        ('system', ident.get('system')),
+        ('fabric providers', ', '.join(providers) if providers else None),
+    ) if v]
+    print(tabulate(id_tbl, headers=['Property', 'Value'], tablefmt='github'))
+    print()
+    print('## Components')
+    print()
+    comp_tbl = [[r['name'], r['version'] or '-', r['origin'], r['via'] or '-', r['role']]
+                for r in rows]
+    print(tabulate(comp_tbl,
+                   headers=['Component', 'Version', 'Origin', 'Found via', 'Role'],
+                   tablefmt='github'))
+    print()
+    print('## Environment variables')
+    print()
+    if envvars:
+        env_tbl = [[r['name'], r['value'], r['component']] for r in envvars]
+        print(tabulate(env_tbl, headers=['Variable', 'Value', 'Affects'],
+                       tablefmt='github'))
+    else:
+        print('_none of the tracked netstack variables are set_')
+
+
+def to_json(ident, providers, rows, envvars):
+    return {
+        'uenv': ident,
+        'fabric_providers': providers,
+        'components': rows,
+        'envvars': envvars,
+    }
+
+
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Report the user-land network stack of a loaded uenv.')
+    parser.add_argument('--format', choices=['pretty', 'markdown', 'json'],
+                        default='pretty', help='Output format (default: pretty)')
+    args = parser.parse_args()
+
+    ident = _uenv_identity()
+    if ident is None:
+        if args.format == 'json':
+            print(json.dumps({'error': 'no uenv view is loaded'}, indent=2))
+        else:
+            Console().print(
+                '[bold red]No uenv view is loaded.[/bold red]\n'
+                'Run inside a uenv, e.g.:\n'
+                '  [cyan]uenv run --view=default prgenv-gnu/25.11:v1 -- '
+                './bin/user-stack[/cyan]')
+        raise SystemExit(1)
+
+    providers = _fi_providers()
+    rows = collect_components(ident)
+    envvars = collect_envvars()
+
+    if args.format == 'pretty':
+        print_identity_pretty(ident, providers)
+        print_components_pretty(rows)
+        print_envvars_pretty(envvars)
+    elif args.format == 'markdown':
+        print_markdown(ident, providers, rows, envvars)
+    elif args.format == 'json':
+        print(json.dumps(to_json(ident, providers, rows, envvars), indent=2))

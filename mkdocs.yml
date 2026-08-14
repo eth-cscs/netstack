@@ -14,9 +14,31 @@ plugins:
   - autorefs
 nav:
   - Welcome: index.md
+  - Tools: tools.md
+  - Environment variables: envvars.md
   - 'Packages':
     - packages/index.md
-    - 'libfabric': packages/libfabric.md
+    - 'MPI':
+      - 'cray-mpich': packages/cray-mpich.md
+      - 'cray-gtl': packages/cray-gtl.md
+      - 'mpich': packages/mpich.md
+      - 'openmpi': packages/openmpi.md
+    - 'Fabric / Slingshot':
+      - 'libfabric': packages/libfabric.md
+      - 'libcxi': packages/libcxi.md
+      - 'cxi-driver': packages/cxi-driver.md
+      - 'cassini-headers': packages/cassini-headers.md
+    - 'GPU communication':
+      - 'nccl': packages/nccl.md
+      - 'aws-ofi-nccl': packages/aws-ofi-nccl.md
+      - 'cuda': packages/cuda.md
+      - 'cuda-driver': packages/cuda-driver.md
+    - 'Intra-node':
+      - 'xpmem': packages/xpmem.md
+    - 'Launch':
+      - 'cray-pmi': packages/cray-pmi.md
+      - 'cray-pals': packages/cray-pals.md
+      - 'slurm': packages/slurm.md
 
 theme:
   name: material
