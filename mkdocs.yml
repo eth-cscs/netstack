@@ -13,11 +13,8 @@ plugins:
         - trimmer
   - autorefs
 nav:
-  - Welcome: index.md
+  - index.md
   - Tools: tools.md
-  - 'Analysis':
-    - analysis/index.md
-    - 'Analysing a uenv': analysis/uenv.md
   - 'Environment variables': envvars.md
   - 'Packages':
     - packages/index.md
@@ -43,6 +40,9 @@ nav:
       - 'pmix': packages/pmix.md
       - 'cray-pals': packages/cray-pals.md
       - 'slurm': packages/slurm.md
+  - 'Analysis':
+    - analysis/index.md
+    - 'Analysing a uenv': analysis/uenv.md
   - 'Contributing': contributing.md
 
 theme:

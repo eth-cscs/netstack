@@ -17,6 +17,12 @@ The two are complementary.
 Runtime resolution says what loads, and metadata says what it is and what it was built from.
 Neither is sufficient alone: a library sitting on `LD_LIBRARY_PATH` may still resolve to a host copy through an rpath, and a build-time header mismatch is invisible to `ldd`.
 
+!!! note "Provenance is not decided by a library's name"
+    The same library name falls on either side of the split depending on how the environment was built.
+    `prgenv-gnu/25.11` ships its own libfabric and libcxi, while `prgenv-gnu/25.6` uses the host copies of both.
+    Provenance is established by resolving the path that the dynamic loader actually uses, then cross-checking it against the Spack database of the uenv, as described in [Analysing a uenv][ref-analysis-uenv].
+
+
 [](){#ref-analysis-environment-types}
 ## Environment types
 
