@@ -8,35 +8,48 @@ Every page is named after the [Spack](https://github.com/spack/spack-packages) p
 ## How the components fit together
 
 The netstack is a stack.
-MPI and NCCL sit on top of libfabric, libfabric sits on the Slingshot CXI library and driver, and those drive the NIC.
-Traffic that stays inside a node goes through XPMEM instead of through the fabric.
+`cray-mpich` and `nccl` sit on top of `libfabric`, whose `cxi` provider reaches the NIC through `libcxi` and the `cxi-driver`.
+Traffic that stays inside a node goes through `xpmem` instead of through the fabric.
+The GPU components link the `cuda` runtime, which in turn runs against the host `cuda-driver`.
+
+The two drivers form the bottom layer, because they are the only components tied to the running kernel.
+Dotted edges carry build-time headers and job launch rather than application data.
 
 ```mermaid
 flowchart TD
   app[Application]
-  mpi[Cray MPICH]
-  nccl[NCCL]
-  gtl[cray-gtl]
-  aws[aws-ofi-nccl]
-  fab["libfabric, CXI provider"]
-  cxi[libcxi]
-  drv["cxi-driver (kernel)"]
-  cass[cassini-headers]
-  xpmem["XPMEM (kernel)"]
+  craympich[cray-mpich]
+  nccl[nccl]
+  craygtl[cray-gtl]
+  awsofinccl[aws-ofi-nccl]
+  libfabric[libfabric]
+  xpmem[xpmem]
+  cuda[cuda]
+  libcxi[libcxi]
+  cassini[cassini-headers]
+  cxidriver[cxi-driver]
+  cudadriver[cuda-driver]
   nic[Slingshot 11 NIC]
-  pmi["cray-pmi, cray-pals, Slurm"]
-  cuda["CUDA toolkit and driver"]
+  launch["cray-pmi, cray-pals, slurm"]
 
-  app --> mpi --> gtl
-  app --> nccl --> aws --> fab
-  mpi --> fab
-  mpi --> xpmem
-  fab --> cxi --> drv --> nic
-  cass -.headers.-> cxi
-  cass -.headers.-> fab
-  gtl --> cuda
+  app --> craympich
+  app --> nccl
+  craympich --> craygtl
+  craympich --> libfabric
+  craympich --> xpmem
+  nccl --> awsofinccl --> libfabric
   nccl --> cuda
-  pmi -.launch.-> mpi
+  awsofinccl --> cuda
+  craygtl --> cuda
+  libfabric --> libcxi --> cxidriver --> nic
+  cuda --> cudadriver
+  cassini -.headers.-> libfabric
+  cassini -.headers.-> libcxi
+  launch -.launch.-> craympich
+
+  %% Invisible edges, used only to place a node on the intended layer.
+  %% craygtl ~~~ xpmem
+  %% cudadriver ~~~ libcxi
 ```
 
 [](){#ref-pkg-catalogue}
