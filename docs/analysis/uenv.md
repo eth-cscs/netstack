@@ -1,135 +1,104 @@
+[](){#ref-analysis-uenv}
 # Analysing a uenv
 
-This page documents how the netstack of a **uenv** is extracted. It is
-deliberately uenv-specific: the runtime-resolution method is general, but the
-package-metadata half relies on the **Spack database** that a uenv ships.
-Container and Python-environment support will be documented separately.
+This page describes how the netstack of a uenv is extracted.
+It is deliberately specific to uenv: the runtime-resolution method is general, but the package-metadata half relies on the Spack database that a uenv ships.
+Containers and Python environments will be documented separately.
 
-A uenv is a SquashFS image that is a **Spack installation whose root is the
-mount point** (`/user-environment` by default). That gives us two independent
-sources of truth, which the tools combine.
+A uenv is a SquashFS image that contains a Spack installation whose root is the mount point, `/user-environment` by default.
+That gives two independent sources of truth, which the tools combine.
 
-## 1. Mount and view discovery
+[](){#ref-analysis-uenv-discovery}
+## Mount and view discovery
 
-A loaded uenv exposes itself through the environment:
+A loaded uenv describes itself through the environment.
 
-| Variable | Tells us |
+| Variable | What it gives |
 |---|---|
-| `UENV_VIEW` = `<mount>:<name>:<view>` | mount point, uenv name, active view |
-| `UENV_MOUNT_LIST` = `<sqfs>:<mount>,…` | the mounted image(s) and mount point(s) |
-| `UENV_TELEMETRY` | JSON: label, name, mount, views, image digest |
+| `UENV_VIEW`, as `<mount>:<name>:<view>` | The mount point, the uenv name, and the active view. |
+| `UENV_MOUNT_LIST`, as `<sqfs>:<mount>,…` | The mounted images and their mount points. |
+| `UENV_TELEMETRY` | JSON holding the label, name, mount, views and image digest. |
 
-The active **view** (`<mount>/env/<view>/{bin,lib,lib64}`) is what rewrites
-`PATH` / `LD_LIBRARY_PATH`, so it is the starting point for finding the
-libraries that are actually in play.
+The active view lives at `<mount>/env/<view>/{bin,lib,lib64}`, and it is what rewrites `PATH` and `LD_LIBRARY_PATH`.
+It is therefore the starting point for finding the libraries that are actually in play.
 
-## 2. Runtime resolution — what actually loads
+[](){#ref-analysis-uenv-runtime}
+## Runtime resolution
 
-Starting from *anchor* libraries on the view path (the MPI library, `libnccl`,
-the aws-ofi-nccl plugin), we resolve the full dependency tree with
-[`libtree`](https://github.com/haampie/libtree):
+Starting from the anchor libraries on the view path, which are the MPI library, `libnccl` and the aws-ofi-nccl plugin, the full dependency tree is resolved with [libtree](https://github.com/haampie/libtree).
 
-```console
-$ libtree -p /user-environment/env/default/lib/libmpi_gnu_123.so.12
+```bash title="Resolving the dependency tree of the MPI library"
+libtree -p /user-environment/env/default/lib/libmpi_gnu_123.so.12
 ```
 
-`libtree -p` is preferred over `ldd` because it:
+`libtree -p` is preferred over `ldd` for two reasons.
+It resolves ELF dependencies statically, without executing the object, and it annotates how each library was found, as `[rpath]`, `[runpath]`, `[LD_LIBRARY_PATH]`, `[default path]` or `[ld.so.conf]`.
 
-- resolves ELF dependencies **statically** — it does not execute the object;
-- annotates **how** each library was found: `[rpath]`, `[runpath]`,
-  `[LD_LIBRARY_PATH]`, `[default path]`, `[ld.so.conf]`.
+That annotation is signal, not decoration.
+In `prgenv-gnu/25.6`, Cray MPICH is rpath-pinned to `/opt/cray/libfabric/1.22.0`, which is not the system default libfabric, and only the resolved path together with its search mechanism reveals that.
+`user-stack` surfaces it in the Found via column, and falls back to `ldd` if `libtree` is not installed, losing the annotation but keeping the resolved paths.
 
-That "how" is real signal. In `prgenv-gnu/25.6`, Cray MPICH is **rpath-pinned**
-to `/opt/cray/libfabric/1.22.0` — *not* the system-default libfabric — and only
-the resolved path and its search mechanism reveal it. `bin/user-stack` surfaces
-this in its **Found via** column, falling back to `ldd` (losing only the
-annotation) if `libtree` is absent.
-
+[](){#ref-analysis-uenv-provenance}
 ### Provenance by path
 
-Provenance is **never** guessed from a library's name. For each resolved
-dependency we take its real path and test whether it lies under the uenv mount:
+Provenance is never inferred from a library's name.
+For each resolved dependency, its real path is tested against the uenv mount point:
 
-- under `<mount>` → **uenv**-provided;
-- elsewhere (`/usr/lib64`, `/opt/cray/...`, `/opt/xpmem`) → **host**-provided.
+1. a path under `<mount>` means the library is provided by the uenv, and
+2. a path anywhere else, such as `/usr/lib64`, `/opt/cray/...` or `/opt/xpmem`, means it is provided by the host.
 
-The same library lands on either side depending on the environment:
-[libfabric][libfabric] and [libcxi][libcxi] are uenv-provided in
-`prgenv-gnu/25.11` but host-provided in `25.6` and `24.7`.
+The same library lands on either side depending on the environment.
+[libfabric][ref-pkg-libfabric] and [libcxi][ref-pkg-libcxi] are provided by the uenv in `prgenv-gnu/25.11`, and by the host in `25.6` and `24.7`.
 
-## 3. The Spack database — identity and build graph
+[](){#ref-analysis-uenv-spack-db}
+## The Spack database
 
-Runtime resolution finds *paths*; the Spack database says what those paths
-**are**. Every installed package is recorded in:
+Runtime resolution finds paths, and the Spack database says what those paths are.
+Every installed package is recorded in `<mount>/.spack-db/index.json`, with its name, version, install prefix, dag-hash, and its dependency edges tagged as `build`, `link` or `run`.
 
-```
-<mount>/.spack-db/index.json
-```
+The database is the source of truth for dependencies, and it exposes two things that runtime resolution cannot.
 
-Each entry carries the package name, version, install prefix, dag-hash, and its
-dependency edges tagged `build` / `link` / `run`. This is the **source of truth
-for dependencies**, and it exposes two things runtime resolution cannot:
+Authoritative identity
+:   A resolved store path such as `…/libfabric-2.3.1-ekke44pq…/` maps through its trailing hash to the exact package record.
+    `user-stack` attaches that hash to every uenv component it reports.
 
-- **Authoritative identity.** A resolved store path
-  `…/libfabric-2.3.1-ekke44pq…/` maps by its trailing hash to the exact package
-  record. `bin/user-stack` attaches this hash to every uenv component.
-- **Build-only dependencies.** Packages that produce no runtime `.so` — most
-  importantly the Slingshot [cassini-headers][cassini-headers] and
-  [cxi-driver][cxi-driver] headers — appear in the graph but never in `ldd`.
+Build-only dependencies
+:   Packages that produce no runtime object never appear in `ldd`, but do appear in the graph.
+    The most important of these are the Slingshot [cassini-headers][ref-pkg-cassini-headers] and the [cxi-driver][ref-pkg-cxi-driver] headers.
 
-!!! warning "The database is *build-time* truth, not runtime truth"
-    The database describes what the uenv was **built against**. For **external**
-    packages it can diverge from what loads: on Alps the Spack `xpmem` external
-    is recorded as `2.9.6` under `/usr`, while the library that actually loads is
-    the host `/opt/xpmem` copy (RPM `1.0.1`). So: trust the database for the
-    identity of **in-uenv** packages and for **build** dependencies; trust
-    runtime resolution for what host libraries actually load.
+!!! warning "The database records build-time truth, not runtime truth"
+    The database describes what the uenv was built against.
+    For external packages it can diverge from what actually loads.
+    On Alps the Spack `xpmem` external is recorded as version `2.9.6` under `/usr`, while the library that actually loads is the host copy in `/opt/xpmem`, which the RPM database calls `1.0.1`.
+    Trust the database for the identity of in-uenv packages and for build dependencies, and trust runtime resolution for which host libraries load.
 
+[](){#ref-analysis-uenv-build-provenance}
 ### Build provenance
 
-Combining the two sources answers a question central to diagnosis: **what NIC
-ABI was the fabric stack built against?** For each uenv-provided
-[libfabric][libfabric] / [libcxi][libcxi], `bin/user-stack` reports the
-[cassini-headers][cassini-headers] and [cxi-driver][cxi-driver] versions from
-the database — then those can be checked against the **host** kernel
-[cxi-driver][cxi-driver] (from `bin/system-stack`). In `prgenv-gnu/25.11` the
-fabric libraries are built against git-`main` Cassini headers while the host
-driver is `1.0.0 (SHS13.1.0)` — exactly the kind of pairing a compatibility
-check must reason about.
+Combining the two sources answers a question that matters for diagnosis: which NIC ABI was the fabric stack built against?
 
-## 4. Version namespaces — a caveat
+For each uenv-provided [libfabric][ref-pkg-libfabric] and [libcxi][ref-pkg-libcxi], `user-stack` reports the [cassini-headers][ref-pkg-cassini-headers] and [cxi-driver][ref-pkg-cxi-driver] versions taken from the database.
+Those can then be compared against the host kernel [cxi-driver][ref-pkg-cxi-driver], which [`system-stack`][ref-tools-system-stack] reports.
 
-Different sources report different **numbering schemes** for one library; a
-mismatch between them is expected, not a bug:
+!!! example "A pairing that a compatibility check has to reason about"
+    In `prgenv-gnu/25.11` the fabric libraries are built against Cassini headers from git `main`, while the host driver is version `1.0.0` from `SHS13.1.0`.
 
-| Source | Example (libcxi) | What it is |
+[](){#ref-analysis-uenv-version-namespaces}
+## Version namespaces
+
+Different sources report different numbering schemes for one library.
+A mismatch between them is expected, and is not a bug.
+
+| Source | Example for libcxi | What the number is |
 |---|---|---|
-| RPM (`system-stack`) | `1.0.2` (`SHS13.1.0`) | host package version |
-| soname (`user-stack`) | `1.5.0` (`libcxi.so.1.5.0`) | shared-object / ABI version |
-| Spack db | `git.be1f7149…=main` | the commit the uenv built |
+| RPM, via `system-stack` | `1.0.2` in `SHS13.1.0` | The host package version. |
+| soname, via `user-stack` | `1.5.0`, from `libcxi.so.1.5.0` | The shared-object ABI version. |
+| Spack database | `git.be1f7149…=main` | The commit that the uenv built. |
 
-All three are correct. Compare like with like — by path, hash, or SHS release —
-not across schemes.
+All three are correct.
+Compare like with like, by path, by hash, or by SHS release, and never across schemes.
 
+[](){#ref-analysis-uenv-querying}
 ## Querying the database directly
 
-`bin/spack-db` exposes the database for ad-hoc queries (see [Tools][tools]):
-
-```console
-$ M=/user-environment
-$ spack-db --mount $M list --name libfabric     # installed libfabrics
-$ spack-db --mount $M show libfabric             # package + direct deps (with deptypes)
-$ spack-db --mount $M deps libfabric --type link -t   # transitive link dependencies
-$ spack-db --mount $M dependents libcxi          # what needs libcxi
-$ spack-db --mount $M owner <path-to-a-.so>      # which package owns a path
-```
-
-A package is named by full hash, unique hash prefix, or name. **`--mount` is
-required** and names the Spack install root (the uenv mount point, from
-`$UENV_MOUNT`); it may be given before or after the subcommand.
-
-[libfabric]: ../packages/libfabric.md
-[libcxi]: ../packages/libcxi.md
-[cassini-headers]: ../packages/cassini-headers.md
-[cxi-driver]: ../packages/cxi-driver.md
-[tools]: ../tools.md
+Ad-hoc queries against the database of a mounted uenv are made with `spack-db`, which is documented in [Tools][ref-tools-spack-db].

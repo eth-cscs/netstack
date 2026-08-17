@@ -1,4 +1,4 @@
-site_name: CSCS netstack
+site_name: Netstack
 site_url: https://eth-cscs.github.io/netstack
 
 # provide a link to the docs in top RHS corner
@@ -18,7 +18,7 @@ nav:
   - 'Analysis':
     - analysis/index.md
     - 'Analysing a uenv': analysis/uenv.md
-  - Environment variables: envvars.md
+  - 'Environment variables': envvars.md
   - 'Packages':
     - packages/index.md
     - 'MPI':
@@ -43,6 +43,7 @@ nav:
       - 'pmix': packages/pmix.md
       - 'cray-pals': packages/cray-pals.md
       - 'slurm': packages/slurm.md
+  - 'Contributing': contributing.md
 
 theme:
   name: material

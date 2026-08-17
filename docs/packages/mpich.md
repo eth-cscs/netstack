@@ -1,49 +1,45 @@
+[](){#ref-pkg-mpich}
 # mpich
 
-> Upstream MPICH — the reference MPI that [Cray MPICH][cray-mpich] is derived
-> from and ABI-compatible with.
+MPICH is the reference implementation of the MPI standard, and the implementation that [Cray MPICH][ref-pkg-cray-mpich] is derived from and ABI-compatible with.
 
-|  |  |
+| Property | Value |
 |---|---|
 | Spack package | `mpich` |
 | Layer | MPI |
-| Provided by | **user** |
-| User-buildable | yes |
-| Slingshot component | via [libfabric][libfabric] (with `ch4:ofi`) |
+| Provided by | User. |
+| User-buildable | Yes. |
+| Slingshot component | Indirectly, through [libfabric][ref-pkg-libfabric] with the `ch4:ofi` device. |
 | Upstream | <https://www.mpich.org> |
 
 ## What it is
 
-MPICH is the widely-used reference implementation of the MPI standard. It is
-relevant to the netstack for two reasons:
+MPICH is relevant to the netstack for two reasons.
 
-1. **ABI compatibility.** [Cray MPICH][cray-mpich] implements the MPICH ABI
-   (`3.4a2`), so binaries built against upstream `mpich` can run against Cray
-   MPICH and vice-versa. This is why the `user-stack` role line reads
-   "ABI-compatible MPICH".
-2. **As an alternative MPI.** A user can build `mpich` with the `ch4:ofi`
-   device against [libfabric][libfabric]/CXI and run over Slingshot without Cray
-   MPICH — though on Alps the Cray build is preferred for fabric tuning.
+ABI compatibility
+:   [Cray MPICH][ref-pkg-cray-mpich] implements the MPICH `3.4a2` ABI, so binaries built against upstream `mpich` can run against Cray MPICH and the other way round.
+    This is why the role reported by [`user-stack`][ref-tools-user-stack] reads "ABI-compatible MPICH".
 
-## System vs. user
+An alternative MPI
+:   You can build `mpich` with the `ch4:ofi` device against [libfabric][ref-pkg-libfabric] and the CXI provider, and run over Slingshot without Cray MPICH.
+    On Alps the Cray build is preferred, because of its fabric tuning.
 
-Always a **user** component when present. The prgenv-gnu uenvs use
-[Cray MPICH][cray-mpich], not upstream `mpich`; this page documents the package
-for completeness and for environments that choose it.
+## System or user
+
+When it is present, `mpich` is always a user component.
+
+The `prgenv-gnu` uenvs use [Cray MPICH][ref-pkg-cray-mpich] rather than upstream `mpich`.
+This page documents the package for completeness, and for environments that choose it.
 
 ## Identifying it
 
-- `mpichversion` distinguishes builds. A Cray build reports Cray-specific
-  configure flags and a `GTL-built-with` custom string; a plain build does not.
-- If the MPI library resolves to a `mpich-*` (not `cray-mpich-*`) Spack store
-  directory, it is upstream MPICH.
+`mpichversion` distinguishes the two builds.
+A Cray build reports Cray-specific configure flags and a `GTL-built-with` custom string, and a plain build does not.
+
+If the MPI library resolves to a Spack store directory named `mpich-*` rather than `cray-mpich-*`, it is upstream MPICH.
 
 ## Related
 
-- [cray-mpich][cray-mpich] — the Cray-tuned derivative (default on Alps).
-- [openmpi][openmpi] — the other MPI family.
-- [libfabric][libfabric] — the fabric an `ch4:ofi` build runs over.
-
-[cray-mpich]: cray-mpich.md
-[openmpi]: openmpi.md
-[libfabric]: libfabric.md
+* [cray-mpich][ref-pkg-cray-mpich] is the Cray-tuned derivative, and the default on Alps.
+* [openmpi][ref-pkg-openmpi] is the other MPI family.
+* [libfabric][ref-pkg-libfabric] is the fabric that a `ch4:ofi` build runs over.

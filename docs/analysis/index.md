@@ -1,40 +1,33 @@
+[](){#ref-analysis}
 # Analysing an environment
 
-Describing a netstack means answering, for every component: **what is it, what
-version, where did it come from (system or user), and what does it depend on?**
-Answering well needs *two* kinds of evidence:
+Describing a netstack means answering four questions for every component: what is it, which version is it, did it come from the system or from the user, and what does it depend on?
+Answering them well needs two kinds of evidence.
 
-1. **Runtime resolution** — which shared objects a program actually loads, and
-   *how* the loader found each one (rpath, runpath, `LD_LIBRARY_PATH`, default
-   search). This is the ground truth of what runs. Tools: `libtree`, `ldd`.
-2. **Package metadata** — the identity and dependency graph of the installed
-   software, including **build-only** dependencies that never appear at runtime
-   (e.g. the [Cassini headers][cassini-headers] a fabric library was compiled
-   against). The source depends on how the environment was built.
+Runtime resolution
+:   Which shared objects a program actually loads, and how the loader found each one, whether through an rpath, a runpath, `LD_LIBRARY_PATH`, `ld.so.conf` or the default search path.
+    This is the ground truth of what runs.
+    It is obtained with `libtree` or `ldd`.
 
-The two are complementary: runtime resolution says *what loads*, metadata says
-*what it is and what it was built from*. Neither alone is enough — a library on
-`LD_LIBRARY_PATH` may resolve to a host copy via rpath, and a build-time header
-mismatch is invisible to `ldd`.
+Package metadata
+:   The identity and dependency graph of the installed software, including build-only dependencies that never appear at runtime, such as the [Cassini headers][ref-pkg-cassini-headers] that a fabric library was compiled against.
+    Where this comes from depends on how the environment was built.
 
+The two are complementary.
+Runtime resolution says what loads, and metadata says what it is and what it was built from.
+Neither is sufficient alone: a library sitting on `LD_LIBRARY_PATH` may still resolve to a host copy through an rpath, and a build-time header mismatch is invisible to `ldd`.
+
+[](){#ref-analysis-environment-types}
 ## Environment types
 
-How the **package metadata** is obtained is specific to how the environment was
-assembled. Support is being added one environment type at a time:
+The runtime-resolution half is common to every kind of environment.
+Only the metadata half changes, because how package metadata is obtained depends on how the environment was assembled.
+Support is being added one environment type at a time.
 
 | Environment | Metadata source | Status |
 |---|---|---|
-| [**uenv**][uenv-analysis] | Spack database (`<mount>/.spack-db/index.json`) | supported |
-| Container image | image labels / package manager db | planned |
-| Python / venv | `pip`/`uv` metadata, `importlib.metadata` | planned |
+| [uenv][ref-analysis-uenv] | Spack database at `<mount>/.spack-db/index.json` | Supported |
+| Container image | Image labels, or the package manager database inside the image | Planned |
+| Python virtual environment | `pip` and `uv` metadata, `importlib.metadata` | Planned |
 
-The **runtime-resolution** half (`libtree`/`ldd` + provenance-by-path) is common
-to all of them; only the metadata half changes. The current implementation and
-methodology are documented for uenvs:
-
-- [**Analysing a uenv**][uenv-analysis] — mount and view discovery, runtime
-  resolution, the Spack database, provenance, build provenance, and version
-  namespaces.
-
-[uenv-analysis]: uenv.md
-[cassini-headers]: ../packages/cassini-headers.md
+The current implementation and its methodology are documented in [Analysing a uenv][ref-analysis-uenv], which covers mount and view discovery, runtime resolution, the Spack database, provenance, build provenance, and version namespaces.

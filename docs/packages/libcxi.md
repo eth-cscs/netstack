@@ -1,60 +1,50 @@
+[](){#ref-pkg-libcxi}
 # libcxi
 
-> The user-space library that talks directly to the Slingshot **CXI** kernel
-> driver. The [libfabric][libfabric] `cxi` provider is built on top of it.
+libcxi is the user-space library that talks directly to the Slingshot CXI kernel driver, and the [libfabric][ref-pkg-libfabric] `cxi` provider is built on top of it.
 
-|  |  |
+| Property | Value |
 |---|---|
 | Spack package | `libcxi` |
 | Layer | Slingshot (CXI) |
-| Provided by | **user *or* system** |
-| User-buildable | yes |
-| Slingshot component | ● |
+| Provided by | User or system. |
+| User-buildable | Yes. |
+| Slingshot component | Yes. |
 | Upstream | <https://github.com/HewlettPackard/shs-libcxi> |
 
 ## What it is
 
-`libcxi` (`libcxi.so.1`) provides the interfaces that interact directly with the
-CXI drivers — allocating communication resources on the NIC, memory
-registration, counters. The [libfabric CXI provider][libfabric] links it; so do
-[aws-ofi-nccl][aws-ofi-nccl] and, transitively, [Cray MPICH][cray-mpich].
+libcxi, as `libcxi.so.1`, provides the interfaces that interact directly with the CXI drivers, covering allocation of communication resources on the NIC, memory registration and counters.
+The [libfabric CXI provider][ref-pkg-libfabric] links it, and so do [aws-ofi-nccl][ref-pkg-aws-ofi-nccl] and, transitively, [Cray MPICH][ref-pkg-cray-mpich].
 
-Because it speaks to the kernel [`cxi-driver`][cxi-driver], a user-provided
-`libcxi` must still be compatible with the **driver in the running kernel** — it
-is user-space, but not decoupled from the system.
+!!! warning "User-space does not mean decoupled from the system"
+    Because libcxi speaks to the kernel [cxi-driver][ref-pkg-cxi-driver], a user-provided libcxi still has to be compatible with the driver in the running kernel.
 
-## System vs. user
+## System or user
 
-- **System.** `/usr/lib64/libcxi.so.1`, RPM `cray-libcxi`
-  (`1.0.2`, `SHS13.1.0`). This is the default and is used whenever a uenv does
-  not ship its own.
-- **User.** A uenv may build `libcxi` (against [cassini-headers][cassini-headers]
-  and the [cxi-driver][cxi-driver] headers) and place it on the view path, as
-  `prgenv-gnu/25.11` does.
+System
+:   `/usr/lib64/libcxi.so.1`, from the RPM `cray-libcxi` version `1.0.2` in `SHS13.1.0`.
+    This is the default, and it is used whenever a uenv does not ship its own copy.
+
+User
+:   A uenv can build libcxi, against [cassini-headers][ref-pkg-cassini-headers] and the [cxi-driver][ref-pkg-cxi-driver] headers, and place it on the view path.
+    `prgenv-gnu/25.11` does this.
 
 ## Identifying it
 
 | Environment | Version (soname) | Origin | Found via |
 |---|---|---|---|
-| `prgenv-gnu/25.11:v1` | 1.5.0 | **uenv** | rpath |
-| `prgenv-gnu/25.6:v2`  | 1.5.0 | host     | default path |
-| `prgenv-gnu/24.7:v3`  | 1.5.0 | host     | default path |
+| `prgenv-gnu/25.11:v1` | 1.5.0 | uenv | rpath |
+| `prgenv-gnu/25.6:v2` | 1.5.0 | host | default path |
+| `prgenv-gnu/24.7:v3` | 1.5.0 | host | default path |
 
 !!! note "Two version numbers for one library"
-    `bin/user-stack` reports the **soname** version `1.5.0`
-    (`libcxi.so.1.5.0`), while `bin/system-stack` reports the **RPM** version
-    `1.0.2` (`cray-libcxi-1.0.2-SHS13.1.0`). Both are correct; they are
-    different numbering schemes for the same object. Compare by path or SHS
-    release, not by these numbers.
+    [`user-stack`][ref-tools-user-stack] reports the soname version `1.5.0`, from `libcxi.so.1.5.0`, while [`system-stack`][ref-tools-system-stack] reports the RPM version `1.0.2`, from `cray-libcxi-1.0.2-SHS13.1.0`.
+    Both are correct, and they are different numbering schemes for the same object.
+    Compare by path or by SHS release, and not by these numbers.
 
 ## Related
 
-- [cxi-driver][cxi-driver] — the kernel driver this library drives.
-- [cassini-headers][cassini-headers] — hardware/ABI headers used to build it.
-- [libfabric][libfabric] — the OFI provider built on top of libcxi.
-
-[libfabric]: libfabric.md
-[cxi-driver]: cxi-driver.md
-[cassini-headers]: cassini-headers.md
-[aws-ofi-nccl]: aws-ofi-nccl.md
-[cray-mpich]: cray-mpich.md
+* [cxi-driver][ref-pkg-cxi-driver] is the kernel driver that this library drives.
+* [cassini-headers][ref-pkg-cassini-headers] provides the hardware and ABI headers used to build it.
+* [libfabric][ref-pkg-libfabric] contains the OFI provider built on top of libcxi.

@@ -1,69 +1,55 @@
+[](){#ref-pkg-cuda}
 # cuda
 
-> The CUDA toolkit — the runtime (`libcudart`) and libraries that GPU-aware
-> netstack components link against. **User** half of the CUDA split.
+The CUDA toolkit provides the runtime, `libcudart`, and the libraries that the GPU-aware netstack components link against.
+It is the user half of the CUDA split.
 
-|  |  |
+| Property | Value |
 |---|---|
 | Spack package | `cuda` |
 | Layer | GPU runtime |
-| Provided by | **user** |
-| User-buildable | yes (redistributed by NVIDIA) |
-| Slingshot component | — |
+| Provided by | User. |
+| User-buildable | Yes, from the redistribution by NVIDIA. |
+| Slingshot component | No. |
 | Upstream | <https://developer.nvidia.com/cuda-zone> |
 
 ## What it is
 
-`cuda` is the CUDA toolkit: the runtime library `libcudart.so`, the compiler,
-and the math/comm libraries. In the netstack it is the GPU half that
-[cray-gtl][cray-gtl], [NCCL][nccl] and [aws-ofi-nccl][aws-ofi-nccl] link to move
-device data.
+`cuda` is the CUDA toolkit: the runtime library `libcudart.so`, the compiler, and the mathematics and communication libraries.
+In the netstack it is the GPU half that [cray-gtl][ref-pkg-cray-gtl], [NCCL][ref-pkg-nccl] and [aws-ofi-nccl][ref-pkg-aws-ofi-nccl] link in order to move device data.
 
-!!! important "`cuda` vs `cuda-driver` — do not conflate them"
-    CUDA is deliberately **two** packages:
+!!! warning "`cuda` and `cuda-driver` are not the same thing"
+    CUDA is deliberately split across two packages.
+    `cuda`, this page, is the runtime and toolkit, `libcudart.so.N`, which lives in the uenv and is versioned independently of the OS.
+    [`cuda-driver`][ref-pkg-cuda-driver] is the driver stub, `libcuda.so.1`, which comes from the host and is matched to the kernel.
+    Only the driver stub is host-provided, so "CUDA is host-provided" is wrong.
+    A uenv can ship any toolkit version that is compatible with the host driver.
 
-    - **`cuda`** (this page) — the *runtime/toolkit* (`libcudart.so.N`). Lives in
-      the **uenv**, versioned independently of the OS.
-    - **[`cuda-driver`][cuda-driver]** — the *driver* stub (`libcuda.so.1`).
-      Comes from the **host**, matched to the kernel.
+## System or user
 
-    Saying "CUDA is host-provided" is wrong — only the driver stub is. A uenv can
-    ship any toolkit version compatible with the host driver.
-
-## System vs. user
-
-A **user** component: the toolkit ships in the uenv and appears on the view path
-(`CUDA_HOME` points into the view). It requires a compatible host
-[CUDA driver][cuda-driver].
+`cuda` is a user component.
+The toolkit ships in the uenv and appears on the view path, with `CUDA_HOME` pointing into the view.
+It requires a compatible host [CUDA driver][ref-pkg-cuda-driver].
 
 ## Identifying it
 
-`bin/user-stack` reports the toolkit from the resolved `libcudart` store path:
+[`user-stack`][ref-tools-user-stack] reports the toolkit from the resolved `libcudart` store path.
 
-| Environment | CUDA toolkit | Found via |
+| Environment | Toolkit version | Found via |
 |---|---|---|
-| `prgenv-gnu/25.11:v1` | 12.9.0 | rpath (uenv) |
-| `prgenv-gnu/25.6:v2`  | 12.9.0 | rpath (uenv) |
-| `prgenv-gnu/24.7:v3`  | 12.4.0 | rpath (uenv) |
+| `prgenv-gnu/25.11:v1` | 12.9.0 | rpath, in the uenv |
+| `prgenv-gnu/25.6:v2` | 12.9.0 | rpath, in the uenv |
+| `prgenv-gnu/24.7:v3` | 12.4.0 | rpath, in the uenv |
 
-- `libcudart.so.<major>` soname only gives the major; the Spack store directory
-  (`cuda-12.9.0-…`) gives the full version.
-- Compare against the host driver's max supported CUDA (from `nvidia-smi`) to
-  confirm compatibility — see [cuda-driver][cuda-driver].
+The `libcudart.so.<major>` soname gives only the major version, while the Spack store directory, for example `cuda-12.9.0-…`, gives the full version.
+Compare that against the maximum CUDA version that the host driver supports, which `nvidia-smi` reports, to confirm compatibility.
 
 ## Environment variables
 
-`CUDA_*` — notably `CUDA_VISIBLE_DEVICES` (GPU↔NIC affinity) and `CUDA_HOME`.
-See [Environment variables][envvars].
+The `CUDA_*` family is listed under [Environment variables][ref-envvars-cuda].
+The two that matter most here are `CUDA_VISIBLE_DEVICES`, which affects GPU-to-NIC affinity, and `CUDA_HOME`.
 
 ## Related
 
-- [cuda-driver][cuda-driver] — the system driver half.
-- [cray-gtl][cray-gtl] · [nccl][nccl] · [aws-ofi-nccl][aws-ofi-nccl] — GPU-aware
-  consumers.
-
-[cuda-driver]: cuda-driver.md
-[cray-gtl]: cray-gtl.md
-[nccl]: nccl.md
-[aws-ofi-nccl]: aws-ofi-nccl.md
-[envvars]: ../envvars.md
+* [cuda-driver][ref-pkg-cuda-driver] is the system half of the split.
+* [cray-gtl][ref-pkg-cray-gtl], [nccl][ref-pkg-nccl] and [aws-ofi-nccl][ref-pkg-aws-ofi-nccl] are the GPU-aware consumers.

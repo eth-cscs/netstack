@@ -1,124 +1,111 @@
+[](){#ref-envvars}
 # Environment variables
 
-Environment variables are **user components**: they are part of the netstack
-just as much as the libraries, and are the most common lever for both tuning
-and mis-configuration. This page is a reference of the netstack-relevant
-variables, grouped by the component they affect.
+Environment variables are [user components][ref-index-user].
+They are as much a part of the netstack as the libraries are, and they are the most common lever for both tuning and misconfiguration.
+This page lists the netstack-relevant variables, grouped by the component that reads them.
 
-`bin/user-stack` reports the variables from these families that are **currently
-set** (prefixes `MPICH_`, `FI_`, `OFI_NCCL_`, `NCCL_`, `CXI_`, `PMI_`, `PALS_`,
-`XPMEM`, `CUDA_`).
+[`user-stack`][ref-tools-user-stack] reports the variables from these families that are currently set, by matching the prefixes `MPICH_`, `FI_`, `OFI_NCCL_`, `NCCL_`, `CXI_`, `PMI_`, `PALS_`, `XPMEM` and `CUDA_`.
 
-!!! tip "How to read the *Affects* column"
-    A variable often crosses layers. `MPICH_GPU_SUPPORT_ENABLED` is read by
-    [Cray MPICH][cray-mpich] but only does anything because [cray-gtl][cray-gtl]
-    is present; `FI_MR_CACHE_MONITOR` is a [libfabric][libfabric] setting whose
-    correct value depends on the [XPMEM][xpmem]/kernel combination underneath.
+!!! tip "How to read the Affects column"
+    A variable often crosses layers.
+    `MPICH_GPU_SUPPORT_ENABLED` is read by [Cray MPICH][ref-pkg-cray-mpich], but it only does anything when [cray-gtl][ref-pkg-cray-gtl] is present.
+    `FI_MR_CACHE_MONITOR` is a [libfabric][ref-pkg-libfabric] setting whose correct value depends on the combination of [XPMEM][ref-pkg-xpmem] and kernel underneath it.
 
-## Cray MPICH — `MPICH_*`
+[](){#ref-envvars-mpich}
+## Cray MPICH
 
 | Variable | Affects | Notes |
 |---|---|---|
-| `MPICH_GPU_SUPPORT_ENABLED` | [cray-mpich][cray-mpich], [cray-gtl][cray-gtl] | `1` enables GPU-aware MPI (pass GPU pointers to MPI). Requires the GTL library to be present. |
-| `MPICH_GPU_IPC_ENABLED` | [cray-mpich][cray-mpich] | Intra-node GPU↔GPU transfers via CUDA IPC. |
-| `MPICH_SMP_SINGLE_COPY_MODE` | [cray-mpich][cray-mpich], [xpmem][xpmem] | Intra-node single-copy transport: `XPMEM`, `CMA`, or `NONE`. |
-| `MPICH_OFI_NIC_POLICY` | [cray-mpich][cray-mpich], [libfabric][libfabric] | How ranks are assigned to the multiple Slingshot NICs: `NUMA`, `BLOCK`, `ROUND-ROBIN`. |
-| `MPICH_OFI_NIC_VERBOSE` | [cray-mpich][cray-mpich] | Print NIC-selection decisions (diagnostic). |
-| `MPICH_ENV_DISPLAY` | [cray-mpich][cray-mpich] | Print every MPICH variable and its value at startup — invaluable for diagnosis. |
-| `MPICH_VERSION_DISPLAY` | [cray-mpich][cray-mpich] | Print the MPICH/GTL version banner at startup. |
-| `MPICH_MEMORY_REPORT` | [cray-mpich][cray-mpich] | Report high-water memory use per rank. |
+| `MPICH_GPU_SUPPORT_ENABLED` | [cray-mpich][ref-pkg-cray-mpich], [cray-gtl][ref-pkg-cray-gtl] | `1` enables GPU-aware MPI, so that GPU pointers can be passed to MPI. Requires the GTL library. |
+| `MPICH_GPU_IPC_ENABLED` | [cray-mpich][ref-pkg-cray-mpich] | Intra-node GPU-to-GPU transfers through CUDA IPC. |
+| `MPICH_SMP_SINGLE_COPY_MODE` | [cray-mpich][ref-pkg-cray-mpich], [xpmem][ref-pkg-xpmem] | Intra-node single-copy transport: `XPMEM`, `CMA` or `NONE`. |
+| `MPICH_OFI_NIC_POLICY` | [cray-mpich][ref-pkg-cray-mpich], [libfabric][ref-pkg-libfabric] | How ranks are assigned to the Slingshot NICs: `NUMA`, `BLOCK` or `ROUND-ROBIN`. |
+| `MPICH_OFI_NIC_VERBOSE` | [cray-mpich][ref-pkg-cray-mpich] | Print the NIC-selection decisions. |
+| `MPICH_ENV_DISPLAY` | [cray-mpich][ref-pkg-cray-mpich] | Print every MPICH variable and its value at startup. |
+| `MPICH_VERSION_DISPLAY` | [cray-mpich][ref-pkg-cray-mpich] | Print the MPICH and GTL version banner at startup. |
+| `MPICH_MEMORY_REPORT` | [cray-mpich][ref-pkg-cray-mpich] | Report high-water memory use per rank. |
 
-## Open MPI — `OMPI_*`
+[](){#ref-envvars-openmpi}
+## Open MPI
 
-Open MPI (an alternative to Cray MPICH) is tuned through `OMPI_*` and MCA
-parameters rather than `MPICH_*`. The fabric-level `FI_*` variables below still
-apply, since Open MPI reaches Slingshot through the same [libfabric][libfabric]
-`cxi` provider.
-
-| Variable | Affects | Notes |
-|---|---|---|
-| `OMPI_MCA_pml` | [openmpi][openmpi] | Point-to-point management layer (e.g. `cm` for the OFI MTL, `ob1` for BTLs). |
-| `OMPI_MCA_mtl` / `OMPI_MCA_btl` | [openmpi][openmpi], [libfabric][libfabric] | Selects the transport — `ofi` routes over libfabric/CXI. |
-| `OMPI_MCA_opal_cuda_support` | [openmpi][openmpi], [cuda][cuda] | Force CUDA-aware support on/off. |
-
-## libfabric — `FI_*`
+[Open MPI][ref-pkg-openmpi] is tuned through `OMPI_*` variables and MCA parameters rather than through `MPICH_*`.
+The fabric-level `FI_*` variables below still apply, because Open MPI reaches Slingshot through the same [libfabric][ref-pkg-libfabric] `cxi` provider.
 
 | Variable | Affects | Notes |
 |---|---|---|
-| `FI_PROVIDER` | [libfabric][libfabric] | Restrict the provider set (e.g. `cxi`). Normally left unset so the best provider is chosen. |
-| `FI_MR_CACHE_MONITOR` | [libfabric][libfabric], [xpmem][xpmem] | Memory-registration cache monitor: `memhooks`, `userfaultfd`, `kdreg2`, or `disabled`. A frequent crash / corruption source when mismatched with the kernel — a prime **diagnostic** target. |
-| `FI_HMEM` | [libfabric][libfabric], [cuda][cuda] | Enable heterogeneous (GPU) memory support in the provider. |
-| `FI_LOG_LEVEL` / `FI_LOG_PROV` | [libfabric][libfabric] | Logging verbosity / restrict logging to a provider (e.g. `cxi`). |
+| `OMPI_MCA_pml` | [openmpi][ref-pkg-openmpi] | Point-to-point management layer, for example `cm` for the OFI MTL or `ob1` for the BTLs. |
+| `OMPI_MCA_mtl`, `OMPI_MCA_btl` | [openmpi][ref-pkg-openmpi], [libfabric][ref-pkg-libfabric] | Select the transport. `ofi` routes traffic over libfabric and CXI. |
+| `OMPI_MCA_opal_cuda_support` | [openmpi][ref-pkg-openmpi], [cuda][ref-pkg-cuda] | Force CUDA-aware support on or off. |
 
-### CXI provider — `FI_CXI_*`
-
-The [CXI provider][libfabric] is the Slingshot-11 back-end inside libfabric.
+[](){#ref-envvars-libfabric}
+## libfabric
 
 | Variable | Affects | Notes |
 |---|---|---|
-| `FI_CXI_RX_MATCH_MODE` | [libfabric][libfabric], [libcxi][libcxi] | Tag-matching mode: `hardware`, `software`, `hybrid`. Falling back from hardware to software matching under pressure is a classic performance cliff. |
-| `FI_CXI_RDZV_THRESHOLD` | [libfabric][libfabric] | Message size at which the rendezvous protocol takes over from eager. |
-| `FI_CXI_RDZV_PROTO` | [libfabric][libfabric] | Rendezvous protocol variant (e.g. `default`, `alt_read`). |
-| `FI_CXI_DEFAULT_CQ_SIZE` | [libfabric][libfabric] | Completion-queue depth; too small → `FI_EAGAIN` / retries at scale. |
-| `FI_CXI_REQ_BUF_SIZE` / `FI_CXI_OFLOW_BUF_SIZE` | [libfabric][libfabric] | Unexpected-message and overflow buffer sizing. |
-| `FI_CXI_OPTIMIZED_MRS` | [libfabric][libfabric], [libcxi][libcxi] | Use hardware-optimized memory regions. |
-| `FI_CXI_DISABLE_HOST_REGISTER` | [libfabric][libfabric] | Skip registering host memory with the NIC (interacts with GDR). |
+| `FI_PROVIDER` | [libfabric][ref-pkg-libfabric] | Restrict the provider set, for example to `cxi`. Normally left unset, so that the best provider is chosen. |
+| `FI_MR_CACHE_MONITOR` | [libfabric][ref-pkg-libfabric], [xpmem][ref-pkg-xpmem] | Memory-registration cache monitor: `memhooks`, `userfaultfd`, `kdreg2` or `disabled`. A frequent source of crashes and corruption when it is mismatched with the kernel, and so a common diagnostic target. |
+| `FI_HMEM` | [libfabric][ref-pkg-libfabric], [cuda][ref-pkg-cuda] | Enable heterogeneous, that is GPU, memory support in the provider. |
+| `FI_LOG_LEVEL`, `FI_LOG_PROV` | [libfabric][ref-pkg-libfabric] | Logging verbosity, and restriction of logging to one provider such as `cxi`. |
 
-## aws-ofi-nccl — `OFI_NCCL_*`
+[](){#ref-envvars-cxi}
+### CXI provider
 
-| Variable | Affects | Notes |
-|---|---|---|
-| `OFI_NCCL_PROTOCOL` | [aws-ofi-nccl][aws-ofi-nccl] | Transport protocol used by the plugin (`RDMA`, `SENDRECV`). |
-| `OFI_NCCL_GDR_FLUSH_DISABLE` | [aws-ofi-nccl][aws-ofi-nccl], [cuda][cuda] | Disable the GPUDirect RDMA flush; correctness-sensitive. |
-| `OFI_NCCL_DISABLE_GDR_REQUIRED_CHECK` | [aws-ofi-nccl][aws-ofi-nccl] | Bypass the GDR-support sanity check. |
-| `OFI_NCCL_NIC_DUP_CONNS` | [aws-ofi-nccl][aws-ofi-nccl] | Duplicate connections per NIC for bandwidth. |
-
-## NCCL — `NCCL_*`
+The [CXI provider][ref-pkg-libfabric] is the Slingshot 11 back end inside libfabric.
 
 | Variable | Affects | Notes |
 |---|---|---|
-| `NCCL_NET_PLUGIN` | [nccl][nccl], [aws-ofi-nccl][aws-ofi-nccl] | Which network plugin NCCL loads (`ofi` → aws-ofi-nccl over libfabric/CXI). |
-| `NCCL_NET` | [nccl][nccl] | Selected/observed transport, e.g. `AWS Libfabric`. |
-| `NCCL_DEBUG` | [nccl][nccl] | Logging level: `WARN`, `INFO`, `TRACE`. `INFO` prints the chosen net plugin and topology. |
-| `NCCL_DEBUG_SUBSYS` | [nccl][nccl] | Restrict debug output to subsystems (`NET`, `INIT`, `COLL`, …). |
-| `NCCL_CROSS_NIC` | [nccl][nccl] | Allow rings/trees to cross NICs. |
-| `NCCL_ALGO` / `NCCL_PROTO` | [nccl][nccl] | Force a collective algorithm / protocol (`Ring`, `Tree`; `LL`, `LL128`, `Simple`). |
-| `NCCL_NVLS_ENABLE` | [nccl][nccl] | Enable NVLink SHARP (in-network reduction over NVLink). |
+| `FI_CXI_RX_MATCH_MODE` | [libfabric][ref-pkg-libfabric], [libcxi][ref-pkg-libcxi] | Tag-matching mode: `hardware`, `software` or `hybrid`. Falling back from hardware to software matching under pressure is a known performance cliff. |
+| `FI_CXI_RDZV_THRESHOLD` | [libfabric][ref-pkg-libfabric] | Message size at which the rendezvous protocol takes over from eager. |
+| `FI_CXI_RDZV_PROTO` | [libfabric][ref-pkg-libfabric] | Rendezvous protocol variant, for example `default` or `alt_read`. |
+| `FI_CXI_DEFAULT_CQ_SIZE` | [libfabric][ref-pkg-libfabric] | Completion-queue depth. Too small a value causes `FI_EAGAIN` and retries at scale. |
+| `FI_CXI_REQ_BUF_SIZE`, `FI_CXI_OFLOW_BUF_SIZE` | [libfabric][ref-pkg-libfabric] | Sizing of the unexpected-message and overflow buffers. |
+| `FI_CXI_OPTIMIZED_MRS` | [libfabric][ref-pkg-libfabric], [libcxi][ref-pkg-libcxi] | Use hardware-optimized memory regions. |
+| `FI_CXI_DISABLE_HOST_REGISTER` | [libfabric][ref-pkg-libfabric] | Skip registering host memory with the NIC. Interacts with GPUDirect RDMA. |
 
-## Launcher / PMI — `PMI_*`, `PALS_*`
-
-These are **populated by the launcher** ([Slurm][slurm] / [cray-pals][cray-pals]
-via [cray-pmi][cray-pmi]) at job start — they describe rank/job identity and are
-not normally set by hand. `user-stack` reports them because their presence
-confirms the wire-up path.
+[](){#ref-envvars-aws-ofi-nccl}
+## aws-ofi-nccl
 
 | Variable | Affects | Notes |
 |---|---|---|
-| `PMI_RANK`, `PMI_SIZE`, `PMI_LOCAL_RANK`, `PMI_LOCAL_SIZE`, `PMI_UNIVERSE_SIZE` | [cray-pmi][cray-pmi] | Rank identity/topology for the PMI wire-up. |
-| `PMI_CONTROL_PORT`, `PMI_SHARED_SECRET`, `PMI_JOBID` | [cray-pmi][cray-pmi] | Control-plane rendezvous for process management. |
-| `PMIX_*` (`PMIX_RANK`, `PMIX_NAMESPACE`, `PMIX_SERVER_URI*`, …) | [pmix][pmix] | The PMIx equivalent, used by [Open MPI][openmpi]; set by the launcher's PMIx server. |
-| `PALS_*` (`PALS_RANKID`, `PALS_NODEID`, `PALS_APID`, …) | [cray-pals][cray-pals] | Set by the PALS launcher; per-rank/per-node identity. |
+| `OFI_NCCL_PROTOCOL` | [aws-ofi-nccl][ref-pkg-aws-ofi-nccl] | Transport protocol used by the plugin: `RDMA` or `SENDRECV`. |
+| `OFI_NCCL_GDR_FLUSH_DISABLE` | [aws-ofi-nccl][ref-pkg-aws-ofi-nccl], [cuda][ref-pkg-cuda] | Disable the GPUDirect RDMA flush. Correctness-sensitive. |
+| `OFI_NCCL_DISABLE_GDR_REQUIRED_CHECK` | [aws-ofi-nccl][ref-pkg-aws-ofi-nccl] | Bypass the GPUDirect RDMA support check. |
+| `OFI_NCCL_NIC_DUP_CONNS` | [aws-ofi-nccl][ref-pkg-aws-ofi-nccl] | Number of duplicate connections per NIC, used to raise bandwidth. |
 
-## CUDA — `CUDA_*`
+[](){#ref-envvars-nccl}
+## NCCL
 
 | Variable | Affects | Notes |
 |---|---|---|
-| `CUDA_VISIBLE_DEVICES` | [cuda][cuda], [cuda-driver][cuda-driver] | Which GPUs the process sees; affects GPU↔NIC affinity. |
-| `CUDA_HOME` | [cuda][cuda] | Toolkit root; set by the uenv view. |
-| `CUDA_CACHE_PATH` | [cuda][cuda] | JIT compilation cache location. |
-| `CUDA_MODULE_LOADING` | [cuda][cuda] | `EAGER`/`LAZY` module loading. |
+| `NCCL_NET_PLUGIN` | [nccl][ref-pkg-nccl], [aws-ofi-nccl][ref-pkg-aws-ofi-nccl] | Which network plugin NCCL loads. `ofi` selects aws-ofi-nccl over libfabric and CXI. |
+| `NCCL_NET` | [nccl][ref-pkg-nccl] | The selected transport, reported as for example `AWS Libfabric`. |
+| `NCCL_DEBUG` | [nccl][ref-pkg-nccl] | Logging level: `WARN`, `INFO` or `TRACE`. `INFO` prints the chosen net plugin and the topology. |
+| `NCCL_DEBUG_SUBSYS` | [nccl][ref-pkg-nccl] | Restrict debug output to subsystems such as `NET`, `INIT` or `COLL`. |
+| `NCCL_CROSS_NIC` | [nccl][ref-pkg-nccl] | Allow rings and trees to cross NICs. |
+| `NCCL_ALGO`, `NCCL_PROTO` | [nccl][ref-pkg-nccl] | Force a collective algorithm, `Ring` or `Tree`, or a protocol, `LL`, `LL128` or `Simple`. |
+| `NCCL_NVLS_ENABLE` | [nccl][ref-pkg-nccl] | Enable NVLink SHARP, which reduces in the network over NVLink. |
 
-[cray-mpich]: packages/cray-mpich.md
-[cray-gtl]: packages/cray-gtl.md
-[openmpi]: packages/openmpi.md
-[pmix]: packages/pmix.md
-[libfabric]: packages/libfabric.md
-[libcxi]: packages/libcxi.md
-[xpmem]: packages/xpmem.md
-[nccl]: packages/nccl.md
-[aws-ofi-nccl]: packages/aws-ofi-nccl.md
-[cuda]: packages/cuda.md
-[cuda-driver]: packages/cuda-driver.md
-[cray-pmi]: packages/cray-pmi.md
-[cray-pals]: packages/cray-pals.md
-[slurm]: packages/slurm.md
+[](){#ref-envvars-launcher}
+## Launcher and PMI
+
+These variables are populated by the launcher, either [Slurm][ref-pkg-slurm] or [cray-pals][ref-pkg-cray-pals] through [cray-pmi][ref-pkg-cray-pmi], when the job starts.
+They describe rank and job identity, and are not normally set by hand.
+`user-stack` reports them because their presence confirms which wire-up path is in use.
+
+| Variable | Affects | Notes |
+|---|---|---|
+| `PMI_RANK`, `PMI_SIZE`, `PMI_LOCAL_RANK`, `PMI_LOCAL_SIZE`, `PMI_UNIVERSE_SIZE` | [cray-pmi][ref-pkg-cray-pmi] | Rank identity and topology for the PMI wire-up. |
+| `PMI_CONTROL_PORT`, `PMI_SHARED_SECRET`, `PMI_JOBID` | [cray-pmi][ref-pkg-cray-pmi] | Control-plane rendezvous for process management. |
+| `PMIX_RANK`, `PMIX_NAMESPACE`, `PMIX_SERVER_URI*` and the rest of `PMIX_*` | [pmix][ref-pkg-pmix] | The PMIx equivalent, used by [Open MPI][ref-pkg-openmpi] and set by the PMIx server of the launcher. |
+| `PALS_RANKID`, `PALS_NODEID`, `PALS_APID` and the rest of `PALS_*` | [cray-pals][ref-pkg-cray-pals] | Per-rank and per-node identity, set by the PALS launcher. |
+
+[](){#ref-envvars-cuda}
+## CUDA
+
+| Variable | Affects | Notes |
+|---|---|---|
+| `CUDA_VISIBLE_DEVICES` | [cuda][ref-pkg-cuda], [cuda-driver][ref-pkg-cuda-driver] | Which GPUs the process sees, which in turn affects GPU-to-NIC affinity. |
+| `CUDA_HOME` | [cuda][ref-pkg-cuda] | Toolkit root, set by the uenv view. |
+| `CUDA_CACHE_PATH` | [cuda][ref-pkg-cuda] | Location of the JIT compilation cache. |
+| `CUDA_MODULE_LOADING` | [cuda][ref-pkg-cuda] | Module loading mode, `EAGER` or `LAZY`. |
