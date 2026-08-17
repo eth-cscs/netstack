@@ -1,0 +1,1738 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://eth-cscs.github.io/netstack/envvars/">
+      
+      
+        <link rel="prev" href="../tools/">
+      
+      
+        <link rel="next" href="../packages/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Environment variables - Netstack</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#environment-variables" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Netstack" class="md-header__button md-logo" aria-label="Netstack" data-md-component="logo">
+      
+  <img src="../assets/cscs-logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Netstack
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Environment variables
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="white" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/eth-cscs/netstack" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Netstack" class="md-nav__button md-logo" aria-label="Netstack" data-md-component="logo">
+      
+  <img src="../assets/cscs-logo.png" alt="logo">
+
+    </a>
+    Netstack
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/eth-cscs/netstack" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment variables
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cray-mpich" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cray MPICH
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-mpi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open MPI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#libfabric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        libfabric
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="libfabric">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cxi-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CXI provider
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-ofi-nccl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        aws-ofi-nccl
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nccl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NCCL
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#launcher-and-pmi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Launcher and PMI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cuda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CUDA
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../packages/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Packages
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Packages
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cxi-driver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cxi-driver
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cuda-driver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuda-driver
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cuda/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuda
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/libcxi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    libcxi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cassini-headers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cassini-headers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/libfabric/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    libfabric
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/xpmem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    xpmem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cray-gtl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cray-gtl
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cray-pmi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cray-pmi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/pmix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pmix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cray-pals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cray-pals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/slurm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    slurm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cray-mpich/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cray-mpich
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/mpich/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    mpich
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/openmpi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    openmpi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/nccl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    nccl
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/aws-ofi-nccl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    aws-ofi-nccl
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../analysis/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analysis
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Analysis
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analysis/uenv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analysing a uenv
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cray-mpich" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cray MPICH
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-mpi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open MPI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#libfabric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        libfabric
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="libfabric">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cxi-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CXI provider
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-ofi-nccl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        aws-ofi-nccl
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nccl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NCCL
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#launcher-and-pmi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Launcher and PMI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cuda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CUDA
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/eth-cscs/netstack/edit/main/docs/envvars.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75z"/></svg>
+    </a>
+  
+  
+
+
+<p><a href="" id="ref-envvars"></a></p>
+<h1 id="environment-variables">Environment variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h1>
+<p>Environment variables are <a class="autorefs autorefs-internal" title="User components" href="../#user-components">user components</a>.
+They are as much a part of the netstack as the libraries are, and they are the most common lever for both tuning and misconfiguration.
+This page lists the netstack-relevant variables, grouped by the component that reads them.</p>
+<p><a class="autorefs autorefs-internal" href="../tools/#user-stack"><code>user-stack</code></a> reports the variables from these families that are currently set, by matching the prefixes <code>MPICH_</code>, <code>FI_</code>, <code>OFI_NCCL_</code>, <code>NCCL_</code>, <code>CXI_</code>, <code>PMI_</code>, <code>PALS_</code>, <code>XPMEM</code> and <code>CUDA_</code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">How to read the Affects column</p>
+<p>A variable often crosses layers.
+<code>MPICH_GPU_SUPPORT_ENABLED</code> is read by <a class="autorefs autorefs-internal" title="cray-mpich" href="../packages/cray-mpich/#cray-mpich">Cray MPICH</a>, but it only does anything when <a class="autorefs autorefs-internal" href="../packages/cray-gtl/#cray-gtl">cray-gtl</a> is present.
+<code>FI_MR_CACHE_MONITOR</code> is a <a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a> setting whose correct value depends on the combination of <a class="autorefs autorefs-internal" title="xpmem" href="../packages/xpmem/#xpmem">XPMEM</a> and kernel underneath it.</p>
+</div>
+<p><a href="" id="ref-envvars-mpich"></a></p>
+<h2 id="cray-mpich">Cray MPICH<a class="headerlink" href="#cray-mpich" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Affects</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MPICH_GPU_SUPPORT_ENABLED</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cray-mpich/#cray-mpich">cray-mpich</a>, <a class="autorefs autorefs-internal" href="../packages/cray-gtl/#cray-gtl">cray-gtl</a></td>
+<td><code>1</code> enables GPU-aware MPI, so that GPU pointers can be passed to MPI. Requires the GTL library.</td>
+</tr>
+<tr>
+<td><code>MPICH_GPU_IPC_ENABLED</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cray-mpich/#cray-mpich">cray-mpich</a></td>
+<td>Intra-node GPU-to-GPU transfers through CUDA IPC.</td>
+</tr>
+<tr>
+<td><code>MPICH_SMP_SINGLE_COPY_MODE</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cray-mpich/#cray-mpich">cray-mpich</a>, <a class="autorefs autorefs-internal" href="../packages/xpmem/#xpmem">xpmem</a></td>
+<td>Intra-node single-copy transport: <code>XPMEM</code>, <code>CMA</code> or <code>NONE</code>.</td>
+</tr>
+<tr>
+<td><code>MPICH_OFI_NIC_POLICY</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cray-mpich/#cray-mpich">cray-mpich</a>, <a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a></td>
+<td>How ranks are assigned to the Slingshot NICs: <code>NUMA</code>, <code>BLOCK</code> or <code>ROUND-ROBIN</code>.</td>
+</tr>
+<tr>
+<td><code>MPICH_OFI_NIC_VERBOSE</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cray-mpich/#cray-mpich">cray-mpich</a></td>
+<td>Print the NIC-selection decisions.</td>
+</tr>
+<tr>
+<td><code>MPICH_ENV_DISPLAY</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cray-mpich/#cray-mpich">cray-mpich</a></td>
+<td>Print every MPICH variable and its value at startup.</td>
+</tr>
+<tr>
+<td><code>MPICH_VERSION_DISPLAY</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cray-mpich/#cray-mpich">cray-mpich</a></td>
+<td>Print the MPICH and GTL version banner at startup.</td>
+</tr>
+<tr>
+<td><code>MPICH_MEMORY_REPORT</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cray-mpich/#cray-mpich">cray-mpich</a></td>
+<td>Report high-water memory use per rank.</td>
+</tr>
+</tbody>
+</table>
+<p><a href="" id="ref-envvars-openmpi"></a></p>
+<h2 id="open-mpi">Open MPI<a class="headerlink" href="#open-mpi" title="Permanent link">&para;</a></h2>
+<p><a class="autorefs autorefs-internal" title="openmpi" href="../packages/openmpi/#openmpi">Open MPI</a> is tuned through <code>OMPI_*</code> variables and MCA parameters rather than through <code>MPICH_*</code>.
+The fabric-level <code>FI_*</code> variables below still apply, because Open MPI reaches Slingshot through the same <a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a> <code>cxi</code> provider.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Affects</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OMPI_MCA_pml</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/openmpi/#openmpi">openmpi</a></td>
+<td>Point-to-point management layer, for example <code>cm</code> for the OFI MTL or <code>ob1</code> for the BTLs.</td>
+</tr>
+<tr>
+<td><code>OMPI_MCA_mtl</code>, <code>OMPI_MCA_btl</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/openmpi/#openmpi">openmpi</a>, <a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a></td>
+<td>Select the transport. <code>ofi</code> routes traffic over libfabric and CXI.</td>
+</tr>
+<tr>
+<td><code>OMPI_MCA_opal_cuda_support</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/openmpi/#openmpi">openmpi</a>, <a class="autorefs autorefs-internal" href="../packages/cuda/#cuda">cuda</a></td>
+<td>Force CUDA-aware support on or off.</td>
+</tr>
+</tbody>
+</table>
+<p><a href="" id="ref-envvars-libfabric"></a></p>
+<h2 id="libfabric">libfabric<a class="headerlink" href="#libfabric" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Affects</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FI_PROVIDER</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a></td>
+<td>Restrict the provider set, for example to <code>cxi</code>. Normally left unset, so that the best provider is chosen.</td>
+</tr>
+<tr>
+<td><code>FI_MR_CACHE_MONITOR</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a>, <a class="autorefs autorefs-internal" href="../packages/xpmem/#xpmem">xpmem</a></td>
+<td>Memory-registration cache monitor: <code>memhooks</code>, <code>userfaultfd</code>, <code>kdreg2</code> or <code>disabled</code>. A frequent source of crashes and corruption when it is mismatched with the kernel, and so a common diagnostic target.</td>
+</tr>
+<tr>
+<td><code>FI_HMEM</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a>, <a class="autorefs autorefs-internal" href="../packages/cuda/#cuda">cuda</a></td>
+<td>Enable heterogeneous, that is GPU, memory support in the provider.</td>
+</tr>
+<tr>
+<td><code>FI_LOG_LEVEL</code>, <code>FI_LOG_PROV</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a></td>
+<td>Logging verbosity, and restriction of logging to one provider such as <code>cxi</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><a href="" id="ref-envvars-cxi"></a></p>
+<h3 id="cxi-provider">CXI provider<a class="headerlink" href="#cxi-provider" title="Permanent link">&para;</a></h3>
+<p>The <a class="autorefs autorefs-internal" title="libfabric" href="../packages/libfabric/#libfabric">CXI provider</a> is the Slingshot 11 back end inside libfabric.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Affects</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FI_CXI_RX_MATCH_MODE</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a>, <a class="autorefs autorefs-internal" href="../packages/libcxi/#libcxi">libcxi</a></td>
+<td>Tag-matching mode: <code>hardware</code>, <code>software</code> or <code>hybrid</code>. Falling back from hardware to software matching under pressure is a known performance cliff.</td>
+</tr>
+<tr>
+<td><code>FI_CXI_RDZV_THRESHOLD</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a></td>
+<td>Message size at which the rendezvous protocol takes over from eager.</td>
+</tr>
+<tr>
+<td><code>FI_CXI_RDZV_PROTO</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a></td>
+<td>Rendezvous protocol variant, for example <code>default</code> or <code>alt_read</code>.</td>
+</tr>
+<tr>
+<td><code>FI_CXI_DEFAULT_CQ_SIZE</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a></td>
+<td>Completion-queue depth. Too small a value causes <code>FI_EAGAIN</code> and retries at scale.</td>
+</tr>
+<tr>
+<td><code>FI_CXI_REQ_BUF_SIZE</code>, <code>FI_CXI_OFLOW_BUF_SIZE</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a></td>
+<td>Sizing of the unexpected-message and overflow buffers.</td>
+</tr>
+<tr>
+<td><code>FI_CXI_OPTIMIZED_MRS</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a>, <a class="autorefs autorefs-internal" href="../packages/libcxi/#libcxi">libcxi</a></td>
+<td>Use hardware-optimized memory regions.</td>
+</tr>
+<tr>
+<td><code>FI_CXI_DISABLE_HOST_REGISTER</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a></td>
+<td>Skip registering host memory with the NIC. Interacts with GPUDirect RDMA.</td>
+</tr>
+</tbody>
+</table>
+<p><a href="" id="ref-envvars-aws-ofi-nccl"></a></p>
+<h2 id="aws-ofi-nccl">aws-ofi-nccl<a class="headerlink" href="#aws-ofi-nccl" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Affects</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OFI_NCCL_PROTOCOL</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/aws-ofi-nccl/#aws-ofi-nccl">aws-ofi-nccl</a></td>
+<td>Transport protocol used by the plugin: <code>RDMA</code> or <code>SENDRECV</code>.</td>
+</tr>
+<tr>
+<td><code>OFI_NCCL_GDR_FLUSH_DISABLE</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/aws-ofi-nccl/#aws-ofi-nccl">aws-ofi-nccl</a>, <a class="autorefs autorefs-internal" href="../packages/cuda/#cuda">cuda</a></td>
+<td>Disable the GPUDirect RDMA flush. Correctness-sensitive.</td>
+</tr>
+<tr>
+<td><code>OFI_NCCL_DISABLE_GDR_REQUIRED_CHECK</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/aws-ofi-nccl/#aws-ofi-nccl">aws-ofi-nccl</a></td>
+<td>Bypass the GPUDirect RDMA support check.</td>
+</tr>
+<tr>
+<td><code>OFI_NCCL_NIC_DUP_CONNS</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/aws-ofi-nccl/#aws-ofi-nccl">aws-ofi-nccl</a></td>
+<td>Number of duplicate connections per NIC, used to raise bandwidth.</td>
+</tr>
+</tbody>
+</table>
+<p><a href="" id="ref-envvars-nccl"></a></p>
+<h2 id="nccl">NCCL<a class="headerlink" href="#nccl" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Affects</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NCCL_NET_PLUGIN</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/nccl/#nccl">nccl</a>, <a class="autorefs autorefs-internal" href="../packages/aws-ofi-nccl/#aws-ofi-nccl">aws-ofi-nccl</a></td>
+<td>Which network plugin NCCL loads. <code>ofi</code> selects aws-ofi-nccl over libfabric and CXI.</td>
+</tr>
+<tr>
+<td><code>NCCL_NET</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/nccl/#nccl">nccl</a></td>
+<td>The selected transport, reported as for example <code>AWS Libfabric</code>.</td>
+</tr>
+<tr>
+<td><code>NCCL_DEBUG</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/nccl/#nccl">nccl</a></td>
+<td>Logging level: <code>WARN</code>, <code>INFO</code> or <code>TRACE</code>. <code>INFO</code> prints the chosen net plugin and the topology.</td>
+</tr>
+<tr>
+<td><code>NCCL_DEBUG_SUBSYS</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/nccl/#nccl">nccl</a></td>
+<td>Restrict debug output to subsystems such as <code>NET</code>, <code>INIT</code> or <code>COLL</code>.</td>
+</tr>
+<tr>
+<td><code>NCCL_CROSS_NIC</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/nccl/#nccl">nccl</a></td>
+<td>Allow rings and trees to cross NICs.</td>
+</tr>
+<tr>
+<td><code>NCCL_ALGO</code>, <code>NCCL_PROTO</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/nccl/#nccl">nccl</a></td>
+<td>Force a collective algorithm, <code>Ring</code> or <code>Tree</code>, or a protocol, <code>LL</code>, <code>LL128</code> or <code>Simple</code>.</td>
+</tr>
+<tr>
+<td><code>NCCL_NVLS_ENABLE</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/nccl/#nccl">nccl</a></td>
+<td>Enable NVLink SHARP, which reduces in the network over NVLink.</td>
+</tr>
+</tbody>
+</table>
+<p><a href="" id="ref-envvars-launcher"></a></p>
+<h2 id="launcher-and-pmi">Launcher and PMI<a class="headerlink" href="#launcher-and-pmi" title="Permanent link">&para;</a></h2>
+<p>These variables are populated by the launcher, either <a class="autorefs autorefs-internal" title="slurm" href="../packages/slurm/#slurm">Slurm</a> or <a class="autorefs autorefs-internal" href="../packages/cray-pals/#cray-pals">cray-pals</a> through <a class="autorefs autorefs-internal" href="../packages/cray-pmi/#cray-pmi">cray-pmi</a>, when the job starts.
+They describe rank and job identity, and are not normally set by hand.
+<code>user-stack</code> reports them because their presence confirms which wire-up path is in use.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Affects</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PMI_RANK</code>, <code>PMI_SIZE</code>, <code>PMI_LOCAL_RANK</code>, <code>PMI_LOCAL_SIZE</code>, <code>PMI_UNIVERSE_SIZE</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cray-pmi/#cray-pmi">cray-pmi</a></td>
+<td>Rank identity and topology for the PMI wire-up.</td>
+</tr>
+<tr>
+<td><code>PMI_CONTROL_PORT</code>, <code>PMI_SHARED_SECRET</code>, <code>PMI_JOBID</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cray-pmi/#cray-pmi">cray-pmi</a></td>
+<td>Control-plane rendezvous for process management.</td>
+</tr>
+<tr>
+<td><code>PMIX_RANK</code>, <code>PMIX_NAMESPACE</code>, <code>PMIX_SERVER_URI*</code> and the rest of <code>PMIX_*</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/pmix/#pmix">pmix</a></td>
+<td>The PMIx equivalent, used by <a class="autorefs autorefs-internal" title="openmpi" href="../packages/openmpi/#openmpi">Open MPI</a> and set by the PMIx server of the launcher.</td>
+</tr>
+<tr>
+<td><code>PALS_RANKID</code>, <code>PALS_NODEID</code>, <code>PALS_APID</code> and the rest of <code>PALS_*</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cray-pals/#cray-pals">cray-pals</a></td>
+<td>Per-rank and per-node identity, set by the PALS launcher.</td>
+</tr>
+</tbody>
+</table>
+<p><a href="" id="ref-envvars-cuda"></a></p>
+<h2 id="cuda">CUDA<a class="headerlink" href="#cuda" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Affects</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CUDA_VISIBLE_DEVICES</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cuda/#cuda">cuda</a>, <a class="autorefs autorefs-internal" href="../packages/cuda-driver/#cuda-driver">cuda-driver</a></td>
+<td>Which GPUs the process sees, which in turn affects GPU-to-NIC affinity.</td>
+</tr>
+<tr>
+<td><code>CUDA_HOME</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cuda/#cuda">cuda</a></td>
+<td>Toolkit root, set by the uenv view.</td>
+</tr>
+<tr>
+<td><code>CUDA_CACHE_PATH</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cuda/#cuda">cuda</a></td>
+<td>Location of the JIT compilation cache.</td>
+</tr>
+<tr>
+<td><code>CUDA_MODULE_LOADING</code></td>
+<td><a class="autorefs autorefs-internal" href="../packages/cuda/#cuda">cuda</a></td>
+<td>Module loading mode, <code>EAGER</code> or <code>LAZY</code>.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.action.edit", "navigation.indexes", "search.share", "navigation.instant", "navigation.tracking", "navigation.path", "navigation.top", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
