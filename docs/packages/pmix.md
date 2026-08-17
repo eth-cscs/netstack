@@ -17,9 +17,9 @@ It is the counterpart to Cray MPICH's [cray-pmi][ref-pkg-cray-pmi].
 
 PMIx, as `libpmix.so`, is the successor to PMI and PMI-2.
 It is the interface that an MPI runtime uses to bootstrap a job, by publishing and exchanging connection data, discovering ranks, and coordinating with the launcher, before the fabric can carry any traffic.
-It is the control-plane counterpart to the data plane, which is [libfabric][ref-pkg-libfabric] and [XPMEM][ref-pkg-xpmem].
+It is the control-plane counterpart to the data plane, which is made up of [libfabric][ref-pkg-libfabric] and [XPMEM][ref-pkg-xpmem].
 
-At run time PMIx connects to the PMIx server of the launcher, which is the one embedded in Slurm for `srun --mpi=pmix`, or the one in Open MPI's own PRRTE for `mpirun`.
+At run time PMIx connects to the PMIx server of the launcher, which is either the one embedded in Slurm for `srun --mpi=pmix`, or the one in Open MPI's own PRRTE for `mpirun`.
 
 ## System or user
 

@@ -15,7 +15,7 @@
 ## What it is
 
 `cassini-headers` is a headers-only package containing hardware register definitions and C ABI headers for the HPE Cassini high-speed interconnect.
-It is consumed at build time by everything in the Slingshot stack that needs to know the NIC ABI, which is the [cxi-driver][ref-pkg-cxi-driver], [libcxi][ref-pkg-libcxi] and the CXI provider inside [libfabric][ref-pkg-libfabric].
+It is consumed at build time by everything in the Slingshot stack that needs to know the NIC ABI, namely the [cxi-driver][ref-pkg-cxi-driver], [libcxi][ref-pkg-libcxi] and the CXI provider inside [libfabric][ref-pkg-libfabric].
 
 It has no runtime library and never appears in a dependency tree.
 It matters because the header version that a component was built against defines the NIC ABI that the component expects.

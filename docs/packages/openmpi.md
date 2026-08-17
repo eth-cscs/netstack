@@ -47,7 +47,7 @@ For an Open MPI stack it emits an `openmpi` row, with the version taken from `om
 
 There are two other tells.
 The MPI library is `libmpi.so.40` for Open MPI, rather than `libmpi_*.so.12` for Cray MPICH.
-And `ompi_info` lists the MCA components, where you should look for the `ofi` MTL or BTL, which is Slingshot through libfabric, and the `cuda` accelerator, which gives GPU-awareness without a GTL.
+`ompi_info` also lists the MCA components, where you should look for the `ofi` MTL or BTL, which is Slingshot through libfabric, and the `cuda` accelerator, which gives GPU-awareness without a GTL.
 
 ## Environment variables
 

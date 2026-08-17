@@ -16,7 +16,7 @@
 
 `cray-pmi` provides `libpmi.so.0` and `libpmi2.so.0`, the PMI and PMI-2 client libraries that [Cray MPICH][ref-pkg-cray-mpich] links in order to bring a parallel job up.
 Each rank registers with the launcher and exchanges connection information, and only then can the fabric be used.
-PMI is the control-plane sibling of the data plane, which is [libfabric][ref-pkg-libfabric] and [XPMEM][ref-pkg-xpmem].
+PMI is the control-plane sibling of the data plane, which is made up of [libfabric][ref-pkg-libfabric] and [XPMEM][ref-pkg-xpmem].
 
 At run time PMI talks to the launcher, either the PMI implementation in [Slurm][ref-pkg-slurm] under `srun`, or [cray-pals][ref-pkg-cray-pals] under `mpiexec`.
 The `PMI_*` variables visible in a job are populated by that launcher.

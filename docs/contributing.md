@@ -74,10 +74,10 @@ Instead, we advocate adding unique references to sections.
 
 Reference names follow a convention, so that they stay unique across the whole documentation without anyone having to check:
 
-1. a page reference is `ref-` followed by the path of the file, with the `docs/` prefix and the `.md` suffix removed and slashes replaced by hyphens, so `docs/tools.md` is `ref-tools`.
-    - the exception to the rule is packages under `docs/packages`, which are linked `docs/packages/libfabric.md` is `ref-pkg-libfabric` for brevity,
-2. an `index.md` page drops the file name, so `docs/analysis/index.md` is `ref-analysis`, and
-3. a section reference extends the reference of its page with a slug of the section title, so the `## user-stack` section of `docs/tools.md` is `ref-tools-user-stack`.
+1. A page reference is `ref-` followed by the path of the file, with the `docs/` prefix and the `.md` suffix removed and slashes replaced by hyphens, so `docs/tools.md` is `ref-tools`.
+    - The exception is pages under `docs/packages`, which drop the directory name for brevity, so `docs/packages/libfabric.md` is `ref-pkg-libfabric`.
+2. An `index.md` page drops the file name, so `docs/analysis/index.md` is `ref-analysis`.
+3. A section reference extends the reference of its page with a slug of the section title, so the `## user-stack` section of `docs/tools.md` is `ref-tools-user-stack`.
 
 Every page carries its page reference immediately above the title.
 That way any page can be linked to without a relative path, and pages can be moved between directories without touching the links that point at them.
@@ -87,8 +87,8 @@ Do not add one above every heading as a matter of course, because unused referen
 
 The benefits of this approach are that the link won't break if
 
-* either the file containing the link or the file that refers to the link move,
-* or if the title of the target sections changes.
+* either the file containing the link or the file it refers to moves, or
+* the title of the target section changes.
 
 ### Images
 
@@ -99,8 +99,8 @@ You can use **screenshots** or **diagrams**.
 
 Images are stored in the `docs/images` directory.
 
-* create a new sub-directory for your images if appropriate
-* choose a path and file name that hint what the image is about - neither `screenshot.png` nor `PX-202502025-imgx.png` are great names.
+* Create a new sub-directory for your images if that is appropriate.
+* Choose a path and file name that hint at what the image is about. Neither `screenshot.png` nor `PX-202502025-imgx.png` is a great name.
 
 !!! warning
     Keep the size of your images to a minimum because we want to keep an overall lightweight repository.
@@ -112,7 +112,9 @@ Screenshots are not appropriate for this project.
 
 #### Diagrams
 
-Diagrams can help readers understand more abstract concepts like processes or architectures. We suggest you use [mermaid](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams#creating-mermaid-diagrams). Such format makes diagrams easy to maintain and removes the need to commit image files in the repository.
+Diagrams can help readers understand more abstract concepts like processes or architectures.
+We suggest you use [mermaid](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams#creating-mermaid-diagrams).
+That format makes diagrams easy to maintain, and removes the need to commit image files to the repository.
 
 ??? "Example"
 
@@ -144,13 +146,14 @@ Diagrams can help readers understand more abstract concepts like processes or ar
             D--Custom-->DR(Draw.io)
         ```
 
-If you need more hand-crafted diagrams, we suggest you use [draw.io](https://www.drawio.com/). Make sure you export the png with the [source inside](https://www.drawio.com/doc/faq/export-to-png), typically a `file.drawio.png`, so it can be extended in the future as needed.
+If you need more hand-crafted diagrams, we suggest you use [draw.io](https://www.drawio.com/).
+Make sure you export the PNG with the [source inside](https://www.drawio.com/doc/faq/export-to-png), typically as a `file.drawio.png`, so that it can be extended later.
 
 ### Text formatting
 
 Turn off automatic line breaks in your text editor, and stick to one sentence per line in paragraphs of text.
 
-See the good and bad examples below for an example of what happens when a change to a sentence forces a line rebalance:
+The examples below show what happens when a change to a sentence forces a line rebalance:
 
 === "good"
     Before:
@@ -187,26 +190,26 @@ See the good and bad examples below for an example of what happens when a change
 
 This method defines a canonical representation of text, i.e. there is one and only one way to write a paragraph of text, which plays much better with git.
 
-* changes to the text are less likely to create merge conflicts
-* changing one line of text will not modify the surrounding lines (see example above)
-* git diffs and git history are easier to read.
+* Changes to the text are less likely to create merge conflicts.
+* Changing one line of text will not modify the surrounding lines, as in the example above.
+* Diffs and history are easier to read.
 
 ### Frequently asked questions
 
-The documentation does not have a FAQ section, because questions are best answered by the documentation, not in a separate section.
-Integrating information into the main documentation requires some care to identify where the information needs to go, and edit the documentation around it.
+The documentation does not have a FAQ section, because questions are best answered by the documentation itself rather than in a separate section.
+Integrating information into the main documentation takes some care, to identify where the information needs to go and to edit the documentation around it.
 Adding the information to a FAQ is easier, but the result is information about a topic distributed between the docs and FAQ questions, which ultimately makes the documentation harder to search.
 
 ## Style guide
 
 This section contains general guidelines for how to format and present documentation in this repository.
-They should be followed for most cases, but as a guideline it can be broken, _with good reason_.
+They should be followed in most cases, but a guideline can be broken, _with good reason_.
 
 [](){#ref-contributing-voice}
 ### Voice
 
 Write plainly.
-Prose that builds up to a point wastes readers time, and emphasis that is applied everywhere stops meaning anything.
+Prose that builds up to a point wastes the reader's time, and emphasis that is applied everywhere stops meaning anything.
 
 * State a fact instead of telling the reader how to feel about it.
   Write "Cray MPICH resolves libfabric through an rpath, not through `LD_LIBRARY_PATH`", not "crucially, and this is the whole point of the tool, Cray MPICH resolves ...".
@@ -246,12 +249,12 @@ A table with a single row is a sentence, and a table whose cells hold several se
 * Keep the number of columns small enough that the table does not need to scroll sideways on a narrow screen.
 
 Component reference pages under [Packages][ref-pkg] are the one exception.
-Each of them opens with a two column table of the same fixed set of properties, so that two components can be compared by reading the same rows on each page.
+Each of them opens with a two-column table of the same fixed set of properties, so that two components can be compared by reading the same rows on each page.
 That table is layout rather than comparison, and it is used only there.
 
 ### Using admonitions
 
-Aim to include examples, notes, warnings using [admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/) whenever appropriate.
+Aim to include examples, notes and warnings using [admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/) whenever appropriate.
 They stand out better from the main text, and can be collapsed by default if needed.
 
 !!! example "Example one"
@@ -277,8 +280,8 @@ For adding information about a change, originally designed for recording updates
     Old changes can be folded:
 
     ??? change "2025-02-04"
-        * The new Scratch cleanup policy was implemented
-        * NVIDIA driver was updated
+        * The new Scratch cleanup policy was implemented.
+        * The NVIDIA driver was updated.
 
 === "Markdown"
     ```
@@ -291,15 +294,15 @@ For adding information about a change, originally designed for recording updates
 
     ```
     ??? change "2025-02-04"
-        * The new Scratch cleanup policy was implemented
-        * NVIDIA driver was updated
+        * The new Scratch cleanup policy was implemented.
+        * The NVIDIA driver was updated.
     ```
 
 ### Code blocks
 
-Use [code blocks](https://squidfunk.github.io/mkdocs-material/reference/code-blocks/) when you want to display monospace text in a programming language, terminal output, configuration files etc.
+Use [code blocks](https://squidfunk.github.io/mkdocs-material/reference/code-blocks/) when you want to display monospace text such as source code, terminal output or configuration files.
 The documentation uses [pygments](https://pygments.org) for highlighting.
-See [list of available lexers](https://pygments.org/docs/lexers/#) for the languages that you can use for code blocks.
+See the [list of available lexers](https://pygments.org/docs/lexers/#) for the languages that you can use for code blocks.
 
 Use [`console`](https://pygments.org/docs/lexers/#pygments.lexers.shell.BashSessionLexer) for interactive sessions with prompt-output pairs:
 
@@ -332,7 +335,7 @@ Note the use of `title=...`, which will give the code block a heading.
 !!! tip
     Include a title whenever possible to describe what the code block does or is.
 
-If you want to display commands without output that can easily be copied, use `bash` as the language:
+If you want to display commands without their output, so that they can easily be copied, use `bash` as the language:
 
 === "Markdown"
 
@@ -353,7 +356,7 @@ If you want to display commands without output that can easily be copied, use `b
 It can be useful to repeat information on different pages to increase visibility for users.
 If possible, prefer linking to a primary section describing a topic instead of fully repeating text on different pages.
 However, if you believe it's beneficial to actually repeat the content, consider using [snippets](https://facelessuser.github.io/pymdown-extensions/extensions/snippets/) to avoid repeated information getting out of sync on different pages.
-Snippets allow including the contents of a text file in multiple places of the documentation.
+Snippets allow the contents of a text file to be included in multiple places in the documentation.
 
 For example, the recommended NCCL environment variables are defined in a text file ... and included on multiple pages because it's essential that users of NCCL notice and use the environment variables.
 
@@ -371,7 +374,7 @@ For example, to include the recommended NCCL environment variables, do the follo
 === "Rendered"
 
     Note: this has been commented out, because the file doesn't exist.
-    We will expand on this when the time comes
+    We will expand on this when the time comes.
 
     ```bash title="Recommended NCCL environment variables"
     ;--8<-- "docs/software/communication/nccl_env_vars"

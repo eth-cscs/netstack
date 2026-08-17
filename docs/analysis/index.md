@@ -10,7 +10,7 @@ Runtime resolution
     It is obtained with `libtree` or `ldd`.
 
 Package metadata
-:   The identity and dependency graph of the installed software, including build-only dependencies that never appear at runtime, such as the [Cassini headers][ref-pkg-cassini-headers] that a fabric library was compiled against.
+:   The identity and dependency graph of the installed software, including build-only dependencies that never appear at run time, such as the [Cassini headers][ref-pkg-cassini-headers] that a fabric library was compiled against.
     Where this comes from depends on how the environment was built.
 
 The two are complementary.

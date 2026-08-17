@@ -15,7 +15,7 @@ It starts jobs and feeds [PMI][ref-pkg-cray-pmi] the job layout.
 
 ## What it is
 
-PALS launches the ranks of a job, places them on nodes, and provides the runtime data that MPI needs in order to come up, which is the [PMI][ref-pkg-cray-pmi] wire-up and the per-rank identity.
+PALS launches the ranks of a job, places them on nodes, and provides the runtime data that MPI needs in order to come up, namely the [PMI][ref-pkg-cray-pmi] wire-up and the per-rank identity.
 On Alps it is the launcher behind `mpiexec`.
 When jobs are started with [Slurm][ref-pkg-slurm] and `srun`, the Slurm launcher and its PMI take that role instead.
 
