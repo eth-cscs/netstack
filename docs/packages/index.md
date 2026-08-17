@@ -42,59 +42,34 @@ flowchart TD
 [](){#ref-pkg-catalogue}
 ## The components
 
-Whether a component is provided by the system or by the user is a property of how a given environment was built, not a property of the component itself.
-The tables below give the common case on Alps.
-The [tools][ref-tools] report the truth for a specific environment.
+The components are ordered from the lowest level to the highest, so that the table reads in the same direction as the diagram above.
+A component depends only on components that appear above it.
 
-[](){#ref-pkg-mpi}
-### MPI
+Whether a component is provided by the system or by the user is a property of how a given environment was built, and not a property of the component itself.
+The table gives the common case on Alps, and the [tools][ref-tools] report the truth for a specific environment.
 
-| Package | Role | Typically provided by |
-|---|---|---|
-| [cray-mpich][ref-pkg-cray-mpich] | MPI implementation, tuned for Slingshot. | User. |
-| [mpich][ref-pkg-mpich] | Upstream MPI, ABI-compatible with Cray MPICH. | User. |
-| [openmpi][ref-pkg-openmpi] | Alternative MPI implementation. | User. |
-| [cray-gtl][ref-pkg-cray-gtl] | GPU transport layer for GPU-aware MPI. | User. |
+| Package | Layer | Role | Typically provided by |
+|---|---|---|---|
+| [cxi-driver][ref-pkg-cxi-driver] | Slingshot, kernel | Kernel driver for the Slingshot NIC. | System. |
+| [cuda-driver][ref-pkg-cuda-driver] | GPU driver | Userspace stub for the NVIDIA kernel driver. | System. |
+| [cuda][ref-pkg-cuda] | GPU runtime | CUDA runtime and libraries. | User. |
+| [libcxi][ref-pkg-libcxi] | Slingshot | User-space library over the CXI driver. | User or system. |
+| [cassini-headers][ref-pkg-cassini-headers] | Slingshot, headers | Hardware and ABI headers for Slingshot. | System and user, at build time. |
+| [libfabric][ref-pkg-libfabric] | Fabric abstraction | OFI fabric abstraction, and home of the CXI provider. | User or system. |
+| [xpmem][ref-pkg-xpmem] | Intra-node | Shared memory for single-copy transfers within a node. | System. |
+| [cray-gtl][ref-pkg-cray-gtl] | GPU-aware MPI | GPU transport layer for GPU-aware MPI. | User. |
+| [cray-pmi][ref-pkg-cray-pmi] | Launch | Process management interface used by Cray MPICH. | User or system. |
+| [pmix][ref-pkg-pmix] | Launch | Process management interface used by Open MPI. | User. |
+| [cray-pals][ref-pkg-cray-pals] | Launch | Application launch service behind `mpiexec`. | System. |
+| [slurm][ref-pkg-slurm] | Launch | Workload manager, and the launcher behind `srun`. | System. |
+| [cray-mpich][ref-pkg-cray-mpich] | MPI | MPI implementation, tuned for Slingshot. | User. |
+| [mpich][ref-pkg-mpich] | MPI | Upstream MPI, ABI-compatible with Cray MPICH. | User. |
+| [openmpi][ref-pkg-openmpi] | MPI | Alternative MPI implementation. | User. |
+| [nccl][ref-pkg-nccl] | GPU collectives | GPU collective communication. | User. |
+| [aws-ofi-nccl][ref-pkg-aws-ofi-nccl] | GPU collectives | Routes NCCL traffic over libfabric and CXI. | User. |
 
-[](){#ref-pkg-fabric}
-### Fabric and Slingshot
-
-| Package | Role | Typically provided by |
-|---|---|---|
-| [libfabric][ref-pkg-libfabric] | OFI fabric abstraction, and home of the CXI provider. | User or system. |
-| [libcxi][ref-pkg-libcxi] | User-space library over the CXI driver. | User or system. |
-| [cxi-driver][ref-pkg-cxi-driver] | Kernel driver for the Slingshot NIC. | System, as a kernel module. |
-| [cassini-headers][ref-pkg-cassini-headers] | Hardware and ABI headers for Slingshot. | System and user, at build time. |
-
-[](){#ref-pkg-gpu}
-### GPU communication
-
-| Package | Role | Typically provided by |
-|---|---|---|
-| [nccl][ref-pkg-nccl] | GPU collective communication. | User. |
-| [aws-ofi-nccl][ref-pkg-aws-ofi-nccl] | Routes NCCL traffic over libfabric and CXI. | User. |
-| [cuda][ref-pkg-cuda] | CUDA runtime and libraries. | User. |
-| [cuda-driver][ref-pkg-cuda-driver] | Userspace stub for the NVIDIA kernel driver. | System. |
-
-[](){#ref-pkg-intra-node}
-### Intra-node
-
-| Package | Role | Typically provided by |
-|---|---|---|
-| [xpmem][ref-pkg-xpmem] | Intra-node shared memory, for single-copy transfers. | System, as a kernel module. |
-
-[](){#ref-pkg-launch}
-### Launch
-
-| Package | Role | Typically provided by |
-|---|---|---|
-| [cray-pmi][ref-pkg-cray-pmi] | Process management interface used by Cray MPICH. | User or system. |
-| [pmix][ref-pkg-pmix] | Process management interface used by Open MPI. | User. |
-| [cray-pals][ref-pkg-cray-pals] | Application launch service behind `mpiexec`. | System. |
-| [slurm][ref-pkg-slurm] | Workload manager, and the launcher behind `srun`. | System. |
-
-The components marked as Slingshot components on their own pages are [libfabric][ref-pkg-libfabric], [libcxi][ref-pkg-libcxi], [cxi-driver][ref-pkg-cxi-driver], [cassini-headers][ref-pkg-cassini-headers] and [aws-ofi-nccl][ref-pkg-aws-ofi-nccl].
-These are the ones whose versions have to be checked against each other and against the host driver when a fabric problem is being diagnosed.
+The Slingshot components are [cxi-driver][ref-pkg-cxi-driver], [libcxi][ref-pkg-libcxi], [cassini-headers][ref-pkg-cassini-headers], [libfabric][ref-pkg-libfabric] and [aws-ofi-nccl][ref-pkg-aws-ofi-nccl].
+These are the ones whose versions have to be checked against each other, and against the host driver, when a fabric problem is being diagnosed.
 
 [](){#ref-pkg-anatomy}
 ## What is on a component page

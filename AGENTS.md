@@ -22,7 +22,7 @@ It is the style guide for this documentation, and it is specific enough that gue
 The rules that are easiest to break by accident:
 
 1. Write one sentence per line, and turn off automatic line wrapping. Never hard-wrap a paragraph at a column limit.
-2. Link to other pages with references, `[libfabric][ref-packages-libfabric]`, and not with relative paths. Reference names follow the convention set out in the guide.
+2. Link to other pages with references, `[libfabric][ref-pkg-libfabric]`, and not with relative paths. Reference names follow the convention set out in the guide.
 3. Every page carries its page reference immediately above its title. Add a section reference only when something links to that section.
 4. Give every code block a lexer and, where it makes sense, a `title=`. Use `console` for a session with output and `$` prompts, and `bash` for commands meant to be copied.
 5. Follow the Voice section: state facts rather than framing them, keep bold for definitions and warnings, and prefer a full stop to a dash.

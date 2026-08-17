@@ -75,7 +75,7 @@ Instead, we advocate adding unique references to sections.
 Reference names follow a convention, so that they stay unique across the whole documentation without anyone having to check:
 
 1. a page reference is `ref-` followed by the path of the file, with the `docs/` prefix and the `.md` suffix removed and slashes replaced by hyphens, so `docs/tools.md` is `ref-tools`.
-    - the exception to the rule is pakges under `docs/packages`, which are linked `docs/packages/libfabric.md` is `ref-pkg-libfabric` for brevity,
+    - the exception to the rule is packages under `docs/packages`, which are linked `docs/packages/libfabric.md` is `ref-pkg-libfabric` for brevity,
 2. an `index.md` page drops the file name, so `docs/analysis/index.md` is `ref-analysis`, and
 3. a section reference extends the reference of its page with a slug of the section title, so the `## user-stack` section of `docs/tools.md` is `ref-tools-user-stack`.
 
