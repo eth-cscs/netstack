@@ -71,17 +71,21 @@ Build-only dependencies
     For external packages it can diverge from what actually loads.
     On Alps the Spack `xpmem` external is recorded as version `2.9.6` under `/usr`, while the library that actually loads is the host copy in `/opt/xpmem`, which the RPM database calls `1.0.1`.
     Trust the database for the identity of in-uenv packages and for build dependencies, and trust runtime resolution for which host libraries load.
+    `user-stack` reports `1.0.1` for that xpmem, because it asks the RPM database about the file that actually loaded rather than the Spack record of an external.
 
 [](){#ref-analysis-uenv-build-provenance}
 ### Build provenance
 
 Combining the two sources answers a question that matters for diagnosis: which NIC ABI was the fabric stack built against?
 
-For each uenv-provided [libfabric][ref-pkg-libfabric] and [libcxi][ref-pkg-libcxi], `user-stack` reports the [cassini-headers][ref-pkg-cassini-headers] and [cxi-driver][ref-pkg-cxi-driver] versions taken from the database.
+When [libfabric][ref-pkg-libfabric] and [libcxi][ref-pkg-libcxi] are uenv-provided, `user-stack` lists the [cassini-headers][ref-pkg-cassini-headers] and [cxi-driver][ref-pkg-cxi-driver] they were built against as components in their own right, with the version and dag-hash taken from the database and the fabric libraries they were compiled into named in the **Found via** column.
 Those can then be compared against the host kernel [cxi-driver][ref-pkg-cxi-driver], which [`system-stack`][ref-tools-system-stack] reports.
+
+The version those packages carry in the database is a Spack git version, which is a commit or a tag rather than a version of the package, so it is reported as an [SHS release][ref-shs-versions-uenv] in the `shs` field and the header rows carry no version of their own.
 
 !!! example "A pairing that a compatibility check has to reason about"
     In `prgenv-gnu/25.11` the fabric libraries are built against Cassini headers from git `main`, while the host driver is version `1.0.0` from `SHS13.1.0`.
+    Because that commit carries no release tag, `user-stack` reports the header version as unknown: the uenv cannot be placed on the [SHS][ref-shs] timeline at all.
 
 [](){#ref-analysis-uenv-version-namespaces}
 ## Version namespaces
@@ -91,12 +95,17 @@ A mismatch between them is expected, and is not a bug.
 
 | Source | Example for libcxi | What the number is |
 |---|---|---|
-| RPM, via `system-stack` | `1.0.2` in `SHS13.1.0` | The host package version. |
-| soname, via `user-stack` | `1.5.0`, from `libcxi.so.1.5.0` | The shared-object ABI version. |
-| Spack database | `git.be1f7149…=main` | The commit that the uenv built. |
+| RPM | `1.0.2` in `SHS13.1.0` | The host package version. |
+| soname | `1.5.0`, from `libcxi.so.1.5.0` | The shared-object ABI version. |
+| Spack database | `git.release/shs-13.0.0=13.0.0` | The [SHS release][ref-shs] the uenv built, from a release tag. |
+| Spack database | `git.be1f7149…=main` | An untagged commit, which names no release. |
 
-All three are correct.
+All of them are correct.
 Compare like with like, by path, by hash, or by SHS release, and never across schemes.
+
+The [component record][ref-tools-components] keeps them apart rather than choosing between them.
+`version` is the number the component's own provider gives it, and `version_source` says which of the rows above it was read from: `rpm` for a host file the RPM database owns, `soname` or `store` for one resolved from a path.
+`shs` is reported separately, because the release is the only one of these numbers that means the same thing on both sides of the split.
 
 [](){#ref-analysis-uenv-querying}
 ## Querying the database directly

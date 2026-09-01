@@ -16,6 +16,7 @@ nav:
   - index.md
   - Tools: tools.md
   - 'Environment variables': envvars.md
+  - 'Slingshot Host Software': shs.md
   - 'Packages':
     - packages/index.md
     - 'cxi-driver': packages/cxi-driver.md

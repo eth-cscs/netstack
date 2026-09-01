@@ -32,16 +32,22 @@ User
 
 ## Identifying it
 
-| Environment | Version (soname) | Origin | Found via |
-|---|---|---|---|
-| `prgenv-gnu/25.11:v1` | 1.5.0 | uenv | rpath |
-| `prgenv-gnu/25.6:v2` | 1.5.0 | host | default path |
-| `prgenv-gnu/24.7:v3` | 1.5.0 | host | default path |
+| Environment | Version | SHS | Origin | Found via |
+|---|---|---|---|---|
+| `prgenv-gnu/26.3:v1` | 1.5.0 | 13.0.0 | uenv | rpath |
+| `prgenv-gnu/25.11:v1` | 1.5.0 | - | uenv | rpath |
+| `prgenv-gnu/25.6:v2` | 1.0.2 | 13.1.0 | rpm | default path |
+| `prgenv-gnu/24.7:v3` | 1.0.2 | 13.1.0 | rpm | default path |
 
-!!! note "Two version numbers for one library"
-    [`user-stack`][ref-tools-user-stack] reports the soname version `1.5.0`, from `libcxi.so.1.5.0`, while [`system-stack`][ref-tools-system-stack] reports the RPM version `1.0.2`, from `cray-libcxi-1.0.2-SHS13.1.0`.
-    Both are correct, and they are different numbering schemes for the same object.
-    Compare by path or by SHS release, and not by these numbers.
+Where the library came from decides which of its numbers [`user-stack`][ref-tools-user-stack] can report.
+A uenv copy is versioned by its soname, `1.5.0`, and placed on the SHS timeline through the tag its Spack package was built from: `prgenv-gnu/26.3` used `release/shs-13.0.0` and reports `13.0.0`, while `prgenv-gnu/25.11` used an untagged commit and can be placed nowhere.
+A host copy is the RPM `cray-libcxi`, so it reports the RPM version and the release from the same database that [`system-stack`][ref-tools-system-stack] reads, and the two tools agree on it exactly.
+
+!!! note "Several version numbers for one library"
+    The soname is `1.5.0` in all four environments above, including those built from different SHS releases, so it distinguishes none of them.
+    The RPM calls the same object `1.0.2`, from `cray-libcxi-1.0.2-SHS13.1.0`.
+    All of them are correct, and they are different numbering schemes for one library.
+    Compare by path or by SHS release, and not across schemes.
 
 ## Related
 

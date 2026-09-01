@@ -10,14 +10,27 @@
 
 # vim: set syntax=python:
 
-"""Report versions of software installed on the system."""
+"""Report versions of software installed on the system.
+
+Run this on a login or compute node, and not inside a uenv: it reports the
+system half of the netstack, which the base OS image provides as RPMs.
+
+Components are reported in the shared record defined in `netstack.py`, the same
+one `user-stack` produces for the user half, so the two reports compare field by
+field.  Every component here has an RPM origin, or no origin at all when the
+package is not installed.
+"""
 
 import argparse
-import collections
 import json
 import os
 import re
 import subprocess
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import netstack  # noqa: E402
+import rpmdb  # noqa: E402
 
 from packaging.version import Version
 from rich import box
@@ -26,103 +39,8 @@ from rich.style import Style
 from rich.table import Table
 from tabulate import tabulate
 
-# Standard subdirectories that sit directly under an install prefix.
-_PREFIX_SUBDIRS = {'bin', 'sbin', 'lib', 'lib64', 'include', 'share', 'libexec'}
 
-
-def _infer_prefix(package_name):
-    """Return the install prefix for an RPM by inspecting its file list.
-
-    Looks for files whose path contains a standard subdirectory (bin, lib,
-    include, ...) and counts how often each candidate prefix appears.  The
-    most common one is returned, or None if nothing can be inferred.
-    """
-    try:
-        result = subprocess.run(
-            ['rpm', '-ql', package_name],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-    except OSError:
-        return None
-
-    if result.returncode != 0:
-        return None
-
-    counts = collections.Counter()
-    for line in result.stdout.decode('utf-8').splitlines():
-        parts = line.split(os.sep)
-        # parts[0] is '' for absolute paths; search from index 1 onwards
-        for i, part in enumerate(parts[1:], start=1):
-            if part in _PREFIX_SUBDIRS:
-                prefix = os.sep + os.path.join(*parts[1:i]) if i > 1 else os.sep
-                counts[prefix] += 1
-                break
-
-    if not counts:
-        return None
-
-    return counts.most_common(1)[0][0]
-
-
-def _rpm_installed(package_name):
-    """Return True if the named RPM is installed."""
-    try:
-        result = subprocess.run(
-            ['rpm', '-q', package_name],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        return result.returncode == 0
-    except OSError:
-        return False
-
-
-def query_rpm(package_name):
-    """Query an RPM package and return version information.
-
-    Args:
-        package_name: The RPM package name (e.g. 'cray-cassini-headers-user')
-
-    Returns:
-        None if the package is not installed, otherwise a dict with keys:
-            'version': the package version as a Version (e.g. Version('1.1.1'))
-            'shs': the SHS release version as a Version (e.g. Version('12.0.1')), or None if not present
-            'prefix': the install prefix as a string (e.g. '/usr'), or None if it cannot be inferred
-    """
-    try:
-        result = subprocess.run(
-            ['rpm', '-q', '--queryformat', '%{VERSION} %{RELEASE}', package_name],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-    except OSError:
-        return None
-
-    if result.returncode != 0:
-        return None
-
-    output = result.stdout.decode('utf-8').strip()
-    parts = output.split(' ', 1)
-    if len(parts) != 2:
-        return None
-
-    version, release = parts
-
-    shs = None
-    match = re.search(r'SHS(\d+\.\d+\.\d+)', release)
-    if match:
-        shs = match.group(1)
-
-    semver = re.match(r'[\d.]+', version).group(0).rstrip('.')
-    return {
-        'version': Version(semver),
-        'shs': Version(shs) if shs else None,
-        'prefix': _infer_prefix(package_name),
-    }
-
-
-# Maps logical package name -> list of RPM package names to query (first match wins).
+# Maps logical component name -> list of RPM package names to query (first match wins).
 PACKAGES = {
     'cassini-headers': ['cray-cassini-headers-user'],
     'libcxi':          ['cray-libcxi'],
@@ -134,90 +52,44 @@ PACKAGES = {
     'xpmem':           ['cray-libxpmem-devel', 'xpmem'],
 }
 
+# The columns of the component table that this side of the stack can fill.
+# There is no runtime resolution here, so no "Found via", and no dag-hash.
+COLUMNS = ('name', 'version', 'shs', 'origin', 'prefix')
 
-def collect_data():
-    """Query all packages and return a list of row dicts.
 
-    Each dict has keys: 'name', 'version', 'shs', 'prefix'.
-    Values are None when the package is not installed or the field is absent.
+def collect_components():
+    """Query all components and return a list of records.
+
+    A component that is not installed keeps its row, with no origin: that a
+    package the system is expected to carry is missing is itself a diagnosis.
     """
     rows = []
     for name, rpms in PACKAGES.items():
-        info = None
+        record = None
         for rpm in rpms:
-            info = query_rpm(rpm)
-            if info is not None:
+            record = rpmdb.query(rpm)
+            if record is not None:
                 break
-        if info is None:
-            rows.append({'name': name, 'version': None, 'shs': None, 'prefix': None})
-        else:
-            rows.append({'name': name, 'version': info['version'], 'shs': info['shs'], 'prefix': info['prefix']})
+        if record is None:
+            rows.append(netstack.component(name))
+            continue
+        rows.append(netstack.component(
+            name,
+            version=record['version'],
+            version_source='rpm',
+            shs=netstack.shs_from_release(record['release']),
+            origin=netstack.origin_rpm(record),
+            prefix=record['prefix'],
+        ))
     return rows
 
 
-def _fmt_version(v):
-    return str(v) if v is not None else '[dim]-[/dim]'
+def print_components_pretty(rows):
+    netstack.print_components_pretty(rows, COLUMNS)
 
 
-def print_pretty(rows):
-    table = Table(
-        box=box.ROUNDED,
-        header_style=Style(color='bright_white', bold=True),
-        border_style=Style(color='grey50'),
-        show_lines=False,
-    )
-    table.add_column('Package',  style='bold cyan',         no_wrap=True)
-    table.add_column('Version',  style='bright_green',      no_wrap=True)
-    table.add_column('SHS',      style='bright_yellow',     no_wrap=True)
-    table.add_column('Prefix',   style='bright_magenta',    no_wrap=True)
-
-    for row in rows:
-        not_installed = row['version'] is None
-        if not_installed:
-            table.add_row(
-                row['name'],
-                '[dim]not installed[/dim]',
-                '[dim]-[/dim]',
-                '[dim]-[/dim]',
-            )
-        else:
-            table.add_row(
-                row['name'],
-                _fmt_version(row['version']),
-                _fmt_version(row['shs']),
-                row['prefix'] or '[dim]-[/dim]',
-            )
-
-    Console().print(table)
-
-
-def print_markdown(rows):
-    table = [
-        [
-            row['name'],
-            str(row['shs'])    if row['shs']    is not None else '-',
-            row['prefix']      if row['prefix'] is not None else '-',
-        ]
-        for row in rows
-    ]
-    headers = ['Package', 'SHS', 'Prefix']
-    print(tabulate(table, headers=headers, tablefmt='github'))
-
-
-def _rows_to_json(rows):
-    return [
-        {
-            'name':    row['name'],
-            'version': str(row['version']) if row['version'] is not None else None,
-            'shs':     str(row['shs'])     if row['shs']     is not None else None,
-            'prefix':  row['prefix'],
-        }
-        for row in rows
-    ]
-
-
-def print_json(rows):
-    print(json.dumps(_rows_to_json(rows), indent=2))
+def print_components_markdown(rows):
+    netstack.print_components_markdown(rows, COLUMNS)
 
 
 # ---------------------------------------------------------------------------
@@ -311,36 +183,25 @@ def collect_gcc_data():
         'cxx':     bool, gcc{N}-c++ installed
         'fortran': bool, gcc{N}-fortran installed
     """
-    # Find all installed gccN base packages.
-    try:
-        result = subprocess.run(
-            ['rpm', '-qa', '--queryformat', '%{NAME}\n'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-    except OSError:
-        return []
-
     majors = sorted({
         int(re.match(r'^gcc(\d+)$', name).group(1))
-        for name in result.stdout.decode('utf-8').splitlines()
+        for name in rpmdb.names()
         if re.match(r'^gcc(\d+)$', name)
     })
 
     rows = []
     for major in majors:
         base = 'gcc{}'.format(major)
-        info = query_rpm(base)
+        info = rpmdb.query(base)
         if info and info['version']:
             # Strip build metadata suffixes like +r278197 or +git9426.
-            clean = re.sub(r'\+.*$', '', str(info['version']))
-            gcc_version = Version(clean)
+            gcc_version = Version(re.sub(r'\+.*$', '', info['version']))
         else:
             gcc_version = None
         prefix = info['prefix'] if info else None
 
         def _exe(name, rpm):
-            if not _rpm_installed(rpm):
+            if not rpmdb.installed(rpm):
                 return None
             return '{}/bin/{}-{}'.format(prefix, name, major) if prefix else None
 
@@ -432,23 +293,22 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     prop_rows = collect_properties()
-    rows      = collect_data()
+    rows      = collect_components()
     gcc_rows  = collect_gcc_data()
 
     if args.format == 'pretty':
         print_properties_pretty(prop_rows)
-        print_pretty(rows)
+        print_components_pretty(rows)
         print_gcc_pretty(gcc_rows)
     elif args.format == 'markdown':
         print_properties_markdown(prop_rows)
         print()
-        print_markdown(rows)
+        print_components_markdown(rows)
         print()
         print_gcc_markdown(gcc_rows)
     elif args.format == 'json':
         print(json.dumps({
             'properties': prop_rows,
-            'packages':   _rows_to_json(rows),
+            'components': rows,
             'gcc':        _gcc_rows_to_json(gcc_rows),
         }, indent=2))
-

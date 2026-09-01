@@ -10,7 +10,7 @@ Netstack holds reference documentation and tools for describing and diagnosing t
 |---|---|
 | `docs/` | The documentation, built with Material for MkDocs. |
 | `docs/contributing.md` | The writing guide. Authoritative for everything under `docs/`. |
-| `bin/` | Three standalone `uv` scripts: `system-stack`, `user-stack`, `spack-db`. |
+| `bin/` | Three standalone `uv` scripts — `system-stack`, `user-stack`, `spack-db` — and the modules they share. |
 | `mkdocs.yml` | Site configuration and the navigation tree. |
 | `site/` | Generated output. Never edit it, and never commit it. |
 
@@ -53,4 +53,12 @@ The tools inspect a live Alps node or a mounted uenv, so their output cannot be 
 Do not invent, extrapolate or update the example output in the documentation.
 If a table of versions needs to change, ask for output captured on the target system.
 
-`user-stack` and `spack-db` both import `bin/spackdb.py`, so a change to the database reader affects both.
+Three modules in `bin/` are imported by the tools rather than run.
+
+| Module | What it holds | Imported by |
+|---|---|---|
+| `netstack.py` | The component record that both stack tools emit, and the code that renders it. | `system-stack`, `user-stack` |
+| `spackdb.py` | A read-only reader for a Spack database. | `user-stack`, `spack-db` |
+| `rpmdb.py` | Read-only queries against the RPM database, by package name and by path. | `system-stack`, `user-stack` |
+
+A change to any of them affects every tool that imports it, and a change to the shape of a component record affects both stack tools and the documentation that shows their tables.

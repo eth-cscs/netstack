@@ -31,11 +31,11 @@ On Alps the module and `libxpmem.so` come from the host at `/opt/xpmem`, from th
 ## Identifying it
 
 [`system-stack`][ref-tools-system-stack] reports `xpmem` version `1.0.1` from the RPM, with prefix `/opt/xpmem`.
-[`user-stack`][ref-tools-user-stack] shows `xpmem` as host-provided, and reports no version.
+[`user-stack`][ref-tools-user-stack] reports the same `1.0.1`, with an `rpm` origin and `ld.so.conf` as the search mechanism that found it.
 
-!!! note "The blank version is deliberate"
-    The host `libxpmem.so` has the soname `0.0.0`, which is an uninformative libtool soname carrying no real version.
-    Rather than print `0.0.0`, `user-stack` leaves the field blank and defers to the RPM version from `system-stack`.
+!!! note "The version comes from the RPM, not the file"
+    The host `libxpmem.so` has the soname `0.0.0`, an uninformative libtool soname carrying no real version.
+    `user-stack` asks the RPM database which package owns the file it resolved, and reports the version from there instead.
 
 ## Environment variables
 
