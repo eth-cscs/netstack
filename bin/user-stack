@@ -372,10 +372,11 @@ def _fi_providers():
 def collect_components(ident, db=None):
     """Return a list of netstack component dicts.
 
-    Each dict: {name, role, version, origin, via, hash, path}.
-    origin is 'uenv', 'host', or 'absent'.  When a Spack database is available,
-    `hash` is the dag-hash of the package that owns an in-uenv library — the
-    authoritative identity that ties a loaded object back to the store.
+    Each dict: {name, role, version, origin, via, hash, path}.  origin is 'uenv'
+    or 'host'; components that are not present in the stack are omitted entirely.
+    When a Spack database is available, `hash` is the dag-hash of the package
+    that owns an in-uenv library — the authoritative identity that ties a loaded
+    object back to the store.
     """
     mounts = _uenv_mounts()
     lib_dirs = _view_lib_dirs(ident)
@@ -407,10 +408,8 @@ def collect_components(ident, db=None):
     rows = []
 
     def add(name, role, path, how=None, prefer='store', version=None):
+        # A component that is not present in the stack is simply omitted.
         if path is None and version is None:
-            rows.append({'name': name, 'role': role, 'version': None,
-                         'origin': 'absent', 'via': None, 'hash': None,
-                         'path': None})
             return
         origin = _origin(path, mounts) if path else 'uenv'
         v = version if version is not None else _version(name, path, prefer)

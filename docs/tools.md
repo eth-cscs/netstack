@@ -53,23 +53,29 @@ uenv run --view=default prgenv-gnu/25.11:v1 -- ./bin/user-stack
 MPI detection is flavour-aware.
 `user-stack` recognises Cray MPICH, Open MPI and upstream MPICH from the resolved Spack store directory, and reports the launch and GPU components that match that flavour: [cray-gtl][ref-pkg-cray-gtl], [cray-pmi][ref-pkg-cray-pmi] and [cray-pals][ref-pkg-cray-pals] for Cray MPICH, or [pmix][ref-pkg-pmix] for Open MPI.
 
-!!! example "Output for `prgenv-gnu/25.11:v1`"
-    | Component | Version | Origin | Found via | Hash | Role |
-    |---|---|---|---|---|---|
-    | cray-mpich | 8.1.32 | uenv | view | j4gnffa | MPI (Cray MPICH, ABI-compatible MPICH 3.4a2) |
-    | cray-gtl | 8.1.32 | uenv | rpath | 3ixenfp | GPU transport layer (GPU-aware MPI) |
-    | libfabric | 2.3.1 | uenv | rpath | ekke44p | OFI fabric abstraction |
-    | libcxi | 1.5.0 | uenv | rpath | o5yivpa | Slingshot (CXI) user-space library |
-    | nccl | 2.28.3 | uenv | view | 2s7ijuj | GPU collectives |
-    | aws-ofi-nccl | 1.16.3 | uenv | view | lkkfflf | NCCL to libfabric transport plugin |
-    | cuda | 12.9.0 | uenv | rpath | amizf2z | CUDA runtime (toolkit) |
-    | cuda-driver | 590.48.01 | host | default path | – | CUDA driver (userspace stub) |
-    | xpmem | – | host | ld.so.conf | – | Intra-node shared memory |
-    | cray-pmi | 6.1.15 | uenv | rpath | r3hwks4 | Process management interface |
-    | cray-pals | – | absent | – | – | Application launch service |
+| Component    | Version   | Origin | Found via    | Hash    | Role |
+|--------------|-----------|--------|--------------|---------|------|
+| cray-mpich   | 8.1.32    | uenv   | view         | j4gnffa | MPI (Cray MPICH, ABI-compatible MPICH 3.4a2) |
+| cray-gtl     | 8.1.32    | uenv   | rpath        | 3ixenfp | GPU transport layer (GPU-aware MPI) |
+| libfabric    | 2.3.1     | uenv   | rpath        | ekke44p | OFI fabric abstraction |
+| libcxi       | 1.5.0     | uenv   | rpath        | o5yivpa | Slingshot (CXI) user-space library |
+| nccl         | 2.28.3    | uenv   | view         | 2s7ijuj | GPU collectives |
+| aws-ofi-nccl | 1.16.3    | uenv   | view         | lkkfflf | NCCL ↔ libfabric transport plugin |
+| cuda         | 12.9.0    | uenv   | rpath        | amizf2z | CUDA runtime (toolkit) |
+| cuda-driver  | 590.48.01 | host   | default path | –       | CUDA driver (userspace stub) |
+| xpmem        | –         | host   | ld.so.conf   | –       | intra-node shared memory |
+| cray-pmi     | 6.1.15    | uenv   | rpath        | r3hwks4 | process management interface |
 
-The Hash column holds the Spack dag-hash of the package that owns each in-uenv library, and is blank for host and absent components.
-It is the authoritative identity of a component, and comes from the Spack database of the uenv.
+Only components that are **actually present** in the stack are listed —
+`user-stack` does not emit placeholder rows for things that are absent (this
+uenv, for example, uses no `cray-pals` launcher library, so it simply does not
+appear). The **Hash** column is the Spack dag-hash of the package that owns each
+in-uenv library (blank for host-provided libraries) — the authoritative
+identity, obtained from the uenv's Spack database. Below the components,
+`user-stack` also prints a
+**Slingshot build provenance** table: the [cassini-headers][cassini-headers] and
+[cxi-driver][cxi-driver] each uenv-provided [libfabric][libfabric] / [libcxi][libcxi]
+was *built against* — a build-time fact invisible to `ldd`.
 
 Below the component table, `user-stack` prints a Slingshot build provenance table.
 For each uenv-provided [libfabric][ref-pkg-libfabric] and [libcxi][ref-pkg-libcxi] it gives the [cassini-headers][ref-pkg-cassini-headers] and [cxi-driver][ref-pkg-cxi-driver] that the library was built against, which is a build-time fact that `ldd` cannot show.
