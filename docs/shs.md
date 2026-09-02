@@ -5,7 +5,8 @@ HPE Slingshot Host Software is the software that HPE ships for the Slingshot int
 SHS is a *release bundle* rather than a single package: one SHS version, for example `13.1.0`, names a kernel driver, a set of user-space libraries and a set of headers that were built, tested and released together.
 
 SHS is the axis along which fabric problems are diagnosed, because it is the only number that both halves of the [system/user split][ref-index-user] have in common.
-The host runs one SHS release, a uenv is built against another, and a mismatch between the two is the first thing to establish.
+The versions of `cxi-driver`, `cassini-headers` and `libcxi` used in a software stack should belong to the same SHS release, because this is how HPE tests and packages them.
+If a user software stack provides one or more of these packages, care is required to ensure that they are compatible with the system SHS installation.
 
 !!! note "This page is a working set of notes"
     What we know about SHS is being recorded here as the tooling grows, rather than being written once and left.
@@ -57,7 +58,7 @@ cray-libcxi-1.0.2-SHS13.1.0_20260127170946_9d460216fdc4
 Both tools extract the release with the pattern `SHS(\d+\.\d+\.\d+)` and report it in its own column, leaving the RPM version in place beside it.
 A package whose release string carries no `SHS` marker is not part of the bundle, and its SHS column is empty.
 Not every Slingshot package carries the marker.
-The older Cray libfabric that `prgenv-gnu/24.7` loads is the RPM `libfabric_1.15.2.0_SSHOT2.1.3` with release `1`, from before the scheme existed, so it can be placed on the Slingshot timeline only by reading its name.
+The older Cray libfabric that `prgenv-gnu/24.7` loads is the RPM `libfabric_1.15.2.0_SSHOT2.1.3` with release `1`, from before the scheme existed, so it can be placed on the Slingshot timeline only by reading its name, which the `rpm` origin records in full.
 [`system-stack`][ref-tools-system-stack] reads it for the packages it tracks by name; [`user-stack`][ref-tools-user-stack] reads it for a host library it resolved, by asking which RPM owns that file, so a host-provided [libcxi][ref-pkg-libcxi] is placed on the SHS timeline from inside a uenv.
 
 !!! tip "The commit in the release string is the upstream tag"

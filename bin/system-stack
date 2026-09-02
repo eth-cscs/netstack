@@ -75,7 +75,7 @@ def collect_components():
             continue
         rows.append(netstack.component(
             name,
-            version=record['version'],
+            version=netstack.rpm_version(record['version']),
             version_source='rpm',
             shs=netstack.shs_from_release(record['release']),
             origin=netstack.origin_rpm(record),

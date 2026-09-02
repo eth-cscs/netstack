@@ -72,8 +72,14 @@ def origin_uenv(mount=None, hash=None, spack_version=None):
 
 
 def origin_rpm(record):
-    """Origin of a component supplied by an RPM, from an `rpmdb` record."""
-    return {'type': 'rpm', 'name': record.get('name'),
+    """Origin of a component supplied by an RPM, from an `rpmdb` record.
+
+    `package` is the full package name, `name-version-release.arch`, which
+    identifies the exact build; `version` is the raw version string it carries,
+    kept because the top-level `version` is the plain release trimmed out of it.
+    """
+    return {'type': 'rpm', 'package': record.get('package'),
+            'name': record.get('name'), 'version': record.get('version'),
             'release': record.get('release')}
 
 
@@ -119,6 +125,26 @@ _SHS_RELEASE = re.compile(r'SHS(\d+\.\d+\.\d+)')
 # its own says nothing about which release it belongs to.
 _GIT_COMMIT = re.compile(r'[0-9a-f]{7,40}')
 _NUMERIC_VERSION = re.compile(r'\d[\w.]*')
+
+
+def rpm_version(version):
+    """The plain release named by an RPM version string.
+
+    An RPM version can carry vendor packaging on its tail, fused to the last
+    component: `lustre-client` is `2.15.7.2_cray_39_g654b360` and the Cray
+    libfabric of `prgenv-gnu/24.7` is `1.15.2.0_SSHOT2.1.3`.  Only the leading
+    run of purely numeric components is the release, so those become `2.15.7`
+    and `1.15.2`.  Nothing is lost: the raw string stays in the `rpm` origin,
+    which also names the package it belongs to.
+    """
+    if not version:
+        return None
+    parts = []
+    for part in version.split('.'):
+        if not part.isdigit():
+            break
+        parts.append(part)
+    return '.'.join(parts) if parts else version
 
 
 def shs_from_release(release):

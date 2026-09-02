@@ -56,7 +56,7 @@ The SHS release is the one number both halves of a stack have in common, which i
 | `origin.type` | The component came from | It also carries |
 |---|---|---|
 | `uenv` | A package the uenv built. | The mount point, the Spack dag-hash, and the version string as the database records it. |
-| `rpm` | A package in the host image. | The RPM name and its release string. |
+| `rpm` | A package in the host image. | The full package name, and the version and release strings separately. |
 | `host` | A file on the host that no RPM owns, such as `/opt/cray/libfabric/1.22.0`. | Nothing further. |
 | nothing | The component was looked for and not found. | |
 
@@ -68,7 +68,9 @@ The SHS release is the one number both halves of a stack have in common, which i
   "shs": "13.1.0",
   "origin": {
     "type": "rpm",
+    "package": "cray-libcxi-1.0.2-SHS13.1.0_20260127170946_9d460216fdc4.aarch64",
     "name": "cray-libcxi",
+    "version": "1.0.2",
     "release": "SHS13.1.0_20260127170946_9d460216fdc4"
   }
 }
@@ -93,18 +95,19 @@ It works by mapping each logical component to one or more RPM names, for example
 The SHS column is the [HPE Slingshot Host Software][ref-shs] release that the package belongs to, parsed from the RPM release string, for example `SHS13.1.0`.
 How that release is recovered on either side of the split is described in [detecting the SHS version][ref-shs-versions].
 
-| Component       | Version                   | SHS    | Origin   | Prefix                    |
-|-----------------|---------------------------|--------|----------|---------------------------|
-| cassini-headers | 1.1.2                     | 13.1.0 | rpm      | /usr                      |
-| libcxi          | 1.0.2                     | 13.1.0 | rpm      | /usr                      |
-| cxi-driver      | 1.0.0                     | 13.1.0 | rpm      | /usr                      |
-| libfabric       | 2.3.1                     | 13.1.0 | rpm      | /opt/cray/libfabric/2.3.1 |
-| slurm           | 25.05.8                   | -      | rpm      | /usr                      |
-| vast            | 4.5.8                     | -      | rpm      | /                         |
-| lustre          | 2.15.7.2_cray_39_g654b360 | -      | rpm      | /usr                      |
-| xpmem           | 1.0.1                     | -      | rpm      | /opt/xpmem                |
+| Component       | Version   | SHS    | Origin   | Prefix                    |
+|-----------------|-----------|--------|----------|---------------------------|
+| cassini-headers | 1.1.2     | 13.1.0 | rpm      | /usr                      |
+| libcxi          | 1.0.2     | 13.1.0 | rpm      | /usr                      |
+| cxi-driver      | 1.0.0     | 13.1.0 | rpm      | /usr                      |
+| libfabric       | 2.3.1     | 13.1.0 | rpm      | /opt/cray/libfabric/2.3.1 |
+| slurm           | 25.05.8   | -      | rpm      | /usr                      |
+| vast            | 4.5.8     | -      | rpm      | /                         |
+| lustre          | 2.15.7    | -      | rpm      | /usr                      |
+| xpmem           | 1.0.1     | -      | rpm      | /opt/xpmem                |
 
-Every version is the one the RPM declares, exactly as it declares it, so a package that carries build metadata in its version keeps it.
+The version is the plain release, which is not always the whole of what the RPM declares.
+A vendor build can fuse its own stamp onto the tail of the version, and the Lustre client is `2.15.7.2_cray_39_g654b360`, so only the leading run of numeric components is reported and the rest is left in the origin, where the `package` field names the exact build.
 A component that is not installed keeps its row, with `not installed` in place of an origin: that a package the system is expected to carry is missing is itself a diagnosis.
 
 [](){#ref-tools-user-stack}

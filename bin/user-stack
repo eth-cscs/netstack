@@ -575,7 +575,8 @@ def _resolve_host_origins(pending):
         if explicit is not None:
             row['version'], row['version_source'] = explicit
         elif record and record['version']:
-            row['version'], row['version_source'] = record['version'], 'rpm'
+            row['version'] = netstack.rpm_version(record['version'])
+            row['version_source'] = 'rpm'
         else:
             row['version'], row['version_source'] = _version(row['name'],
                                                              row['path'], prefer)

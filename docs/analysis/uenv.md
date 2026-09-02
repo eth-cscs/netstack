@@ -105,6 +105,7 @@ Compare like with like, by path, by hash, or by SHS release, and never across sc
 
 The [component record][ref-tools-components] keeps them apart rather than choosing between them.
 `version` is the number the component's own provider gives it, and `version_source` says which of the rows above it was read from: `rpm` for a host file the RPM database owns, `soname` or `store` for one resolved from a path.
+A version read from an RPM is the plain release, with any vendor build stamp fused to its tail left in the origin rather than in the version column.
 `shs` is reported separately, because the release is the only one of these numbers that means the same thing on both sides of the split.
 
 [](){#ref-analysis-uenv-querying}

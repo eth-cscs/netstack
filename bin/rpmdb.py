@@ -24,8 +24,10 @@ import subprocess
 # Standard subdirectories that sit directly under an install prefix.
 _PREFIX_SUBDIRS = {'bin', 'sbin', 'lib', 'lib64', 'include', 'share', 'libexec'}
 
-# One record per line, for both the by-name and the by-path queries.
-_QUERYFORMAT = '%{NAME}|%{VERSION}|%{RELEASE}\n'
+# One record per line, for both the by-name and the by-path queries.  The
+# fields are the four that make up the full package name, so that a record can
+# always name the exact RPM it came from.
+_QUERYFORMAT = '%{NAME}|%{VERSION}|%{RELEASE}|%{ARCH}\n'
 
 
 def _rpm(args, check=True):
@@ -50,14 +52,24 @@ def _rpm(args, check=True):
 
 
 def _record(line):
-    """Parse one `_QUERYFORMAT` line into a dict, or None."""
+    """Parse one `_QUERYFORMAT` line into a dict, or None.
+
+    `package` is the full package name, `name-version-release.arch`, exactly as
+    `rpm -q` prints it, so a record can be handed back to rpm unchanged.
+    """
     parts = line.split('|')
-    if len(parts) != 3:
+    if len(parts) != 4:
         return None
-    name, version, release = (p.strip() for p in parts)
+    name, version, release, arch = (p.strip() for p in parts)
     if not name:
         return None
-    return {'name': name, 'version': version or None, 'release': release or None}
+    package = name
+    if version and release:
+        package = '{}-{}-{}'.format(name, version, release)
+        if arch:
+            package = '{}.{}'.format(package, arch)
+    return {'name': name, 'version': version or None, 'release': release or None,
+            'arch': arch or None, 'package': package}
 
 
 def installed(name):
@@ -66,7 +78,7 @@ def installed(name):
 
 
 def query(name):
-    """Return {name, version, release, prefix} for an RPM, or None.
+    """Return {name, version, release, arch, package, prefix} for an RPM, or None.
 
     `version` and `release` are the raw strings that rpm reports; nothing is
     normalised here, because the release string has to keep the SHS marker and
@@ -84,7 +96,7 @@ def query(name):
 
 
 def owners(paths):
-    """Return {path: {name, version, release}} for the paths an RPM owns.
+    """Return {path: record} for the paths an RPM owns.
 
     One `rpm -qf` call covers every path.  rpm emits its results in argument
     order and reports a path no package owns as a `file ... is not owned by any
