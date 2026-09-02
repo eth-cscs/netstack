@@ -61,6 +61,20 @@ The `24.7` copy is owned by the RPM `libfabric_1.15.2.0_SSHOT2.1.3`, whose versi
     The soname, for example `libfabric.so.1.29.1`, is the ABI version.
     See [version namespaces][ref-analysis-uenv-version-namespaces].
 
+### How system libfabric is installed
+
+`rpm -qf` against each `/opt/cray/libfabric/<version>` tree shows that the three system copies are not owned the same way.
+
+| Path | Owning RPM | RPM version | RPM release |
+|---|---|---|---|
+| `/opt/cray/libfabric/1.15.2.0/` | `libfabric_1.15.2.0_SSHOT2.1.3` | `1.15.2.0_SSHOT2.1.3` | `1` |
+| `/opt/cray/libfabric/1.22.0/` | none | — | — |
+| `/opt/cray/libfabric/2.3.1/` | `libfabric` (plus a `libfabric-devel` package) | `2.3.1` | `SHS13.1.0_20260127180415_93e17abd472e` |
+
+`1.15.2.0` predates the current naming scheme: the Slingshot stamp sits inside the package *name* itself, `_SSHOT2.1.3`, rather than in the release field the way `2.3.1`'s `SHS13.1.0` does.
+`2.3.1` is the only one of the three with the modern layout, where `rpm -q` reports version and release as separate fields and the package name stays plain `libfabric`.
+`1.22.0` is owned by no RPM at all: it is the [`host`][ref-tools-components] case, a file dropped on the host outside the RPM database, so `rpm -qf` on anything under that tree comes back empty.
+
 ## Environment variables
 
 libfabric reads the `FI_*` family, including the CXI-specific `FI_CXI_*` variables, which are listed under [Environment variables][ref-envvars-libfabric].

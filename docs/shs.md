@@ -82,13 +82,13 @@ For the Slingshot packages the declared number is the SHS release the tag belong
 [`user-stack`][ref-tools-user-stack] normalises all three forms, and reports an untagged commit as an unknown version rather than printing the commit in a version column where it would be mistaken for one.
 The commit is not lost: it stays in the install path and in the `path` field of the JSON output, and `spack-db` can be asked for the full record by dag-hash.
 
-This is how the [cassini-headers][ref-pkg-cassini-headers], [cxi-driver][ref-pkg-cxi-driver] and [libcxi][ref-pkg-libcxi] rows of a uenv get their SHS release, so all three are placed on the same scale as the host.
+This is how the [cassini-headers][ref-pkg-cassini-headers], [cxi-driver][ref-pkg-cxi-driver] and [libcxi][ref-pkg-libcxi] rows of a uenv get their SHS release, so all three can be compared to the system SHS installation.
 The release is reported in the `shs` field and not as the component's version, because it belongs to the bundle rather than to the package: a uenv libcxi reports the soname `1.5.0` as its version and `13.0.0` as its SHS release, and both are true of the same file.
 
 !!! warning "A tag that is absent is not a release that is absent"
-    An unknown version means only that the uenv was built from an untagged commit.
-    The library it produced is as real as any other, and its ABI still has to be compatible with the host driver.
-    `prgenv-gnu/25.11` is built this way.
+    Packages with an unknown version in a uenv means that the package was built from an untagged commit.
+    Older versions of the `cassini-headers`, `lib-cxi`, etc Spack packages referred directly to commit SHAs on the `main` branch, so we are not able to associate these with specific versions.
+    The `prgenv-gnu/25.11` uenv is built this way.
 
 Spack renders the same version into a store directory with `=` and `/` both replaced by `_`, so `git.release/shs-13.0.0=13.0.0` becomes the directory `libcxi-git.release_shs-13.0.0_13.0.0-<hash>`.
 Both spellings are recognised, but the database is the form to trust.
