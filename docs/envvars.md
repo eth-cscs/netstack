@@ -7,10 +7,11 @@ This page lists the netstack-relevant variables, grouped by the component that r
 
 [`user-stack`][ref-tools-user-stack] reports the variables from these families that are currently set, by matching the prefixes `MPICH_`, `FI_`, `OFI_NCCL_`, `NCCL_`, `CXI_`, `PMI_`, `PALS_`, `XPMEM` and `CUDA_`.
 
-!!! tip "How to read the Affects column"
+!!! tip "How to read the component field"
     A variable often crosses layers.
     `MPICH_GPU_SUPPORT_ENABLED` is read by [Cray MPICH][ref-pkg-cray-mpich], but it only does anything when [cray-gtl][ref-pkg-cray-gtl] is present.
     `FI_MR_CACHE_MONITOR` is a [libfabric][ref-pkg-libfabric] setting whose correct value depends on the combination of [XPMEM][ref-pkg-xpmem] and kernel underneath it.
+    In the JSON output each of these appears in `envvars` as `{"name": ..., "value": ..., "component": ...}`; see [JSON output][ref-json-output-user-stack].
 
 [](){#ref-envvars-mpich}
 ## Cray MPICH

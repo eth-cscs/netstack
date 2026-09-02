@@ -60,21 +60,7 @@ The SHS release is the one number both halves of a stack have in common, which i
 | `host` | A file on the host that no RPM owns, such as `/opt/cray/libfabric/1.22.0`. | Nothing further. |
 | nothing | The component was looked for and not found. | |
 
-```json title="A host-provided libcxi, reported identically by both tools"
-{
-  "name": "libcxi",
-  "version": "1.0.2",
-  "version_source": "rpm",
-  "shs": "13.1.0",
-  "origin": {
-    "type": "rpm",
-    "package": "cray-libcxi-1.0.2-SHS13.1.0_20260127170946_9d460216fdc4.aarch64",
-    "name": "cray-libcxi",
-    "version": "1.0.2",
-    "release": "SHS13.1.0_20260127170946_9d460216fdc4"
-  }
-}
-```
+See [JSON output][ref-json-output] for the full record, including every `origin` variant.
 
 A component that both tools see is the same component in both reports.
 `user-stack` reads a host library out of the same RPM database that `system-stack` queries, so the two agree on its version, its SHS release and its origin, and the halves can be compared field by field.
@@ -92,7 +78,7 @@ It also reports a few system properties, namely the OS, the cluster, the NVIDIA 
 Run it on a login or compute node, and not inside a uenv, because it reports the base system rather than user land.
 
 It works by mapping each logical component to one or more RPM names, for example `libfabric` to `libfabric` and `libcxi` to `cray-libcxi`, querying `rpm -q --queryformat`, and inferring the install prefix from the package file list.
-The SHS column is the [HPE Slingshot Host Software][ref-shs] release that the package belongs to, parsed from the RPM release string, for example `SHS13.1.0`.
+The `shs` field is the [HPE Slingshot Host Software][ref-shs] release that the package belongs to, parsed from the RPM release string, for example `SHS13.1.0`.
 How that release is recovered on either side of the split is described in [detecting the SHS version][ref-shs-versions].
 
 | Component       | Version   | SHS    | Origin   | Prefix                    |
@@ -142,17 +128,17 @@ MPI detection is flavour-aware.
 
 Only components that are **actually present** in the stack are listed.
 `user-stack` does not emit placeholder rows for things that are absent, and this uenv uses no [cray-pals][ref-pkg-cray-pals] launcher library, so no such row appears.
-The **Hash** column is the Spack dag-hash of the package that owns an in-uenv library, which is empty for anything the host provides.
+The `origin.hash` field is the Spack dag-hash of the package that owns an in-uenv library, which is empty for anything the host provides.
 
-The **Origin** column distinguishes the three ways a component can reach the stack.
+The `origin.type` field distinguishes the three ways a component can reach the stack.
 A `uenv` component was built by the uenv and is identified through its Spack database.
 An `rpm` component is a host file that `user-stack` looked up in the RPM database, which is why `cuda-driver` and `xpmem` above report a version and an origin at all.
 A `host` component is a host file that no RPM owns, such as the Cray libfabric under `/opt/cray/libfabric/1.22.0` that older uenvs load; it is versioned from its path.
 
 Two of the rows are not runtime libraries at all.
-[cassini-headers][ref-pkg-cassini-headers] and [cxi-driver][ref-pkg-cxi-driver] are header-only packages compiled *into* the fabric libraries, so they load nothing and `ldd` cannot see them; `user-stack` recovers them from the build and link edges recorded in the Spack database, and their **Found via** reads `built into <library>` instead of a loader search mechanism.
+[cassini-headers][ref-pkg-cassini-headers] and [cxi-driver][ref-pkg-cxi-driver] are header-only packages compiled *into* the fabric libraries, so they load nothing and `ldd` cannot see them; `user-stack` recovers them from the build and link edges recorded in the Spack database, and their `via` field reads `built into <library>` instead of a loader search mechanism.
 They pin the NIC and kernel-driver ABI that [libfabric][ref-pkg-libfabric] and [libcxi][ref-pkg-libcxi] were built against, which is what governs compatibility with the CXI driver running on the host.
-Their SHS column is the [release the uenv built them from][ref-shs-versions-uenv], and it is empty above because `prgenv-gnu/25.11` pinned an untagged commit instead of a release tag.
+Their `shs` field is the [release the uenv built them from][ref-shs-versions-uenv], and it is empty above because `prgenv-gnu/25.11` pinned an untagged commit instead of a release tag.
 They only appear when the fabric libraries come from the uenv: if libfabric and libcxi are host-provided there is no Spack package to read the edges from.
 Two rows carrying the same component name would mean that libfabric and libcxi disagree on that ABI.
 

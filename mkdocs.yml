@@ -15,6 +15,7 @@ plugins:
 nav:
   - index.md
   - Tools: tools.md
+  - 'JSON output': json-output.md
   - 'Environment variables': envvars.md
   - 'Slingshot Host Software': shs.md
   - 'Packages':

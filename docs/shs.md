@@ -55,8 +55,8 @@ cray-libcxi-1.0.2-SHS13.1.0_20260127170946_9d460216fdc4
                   SHS        build date     upstream commit
 ```
 
-Both tools extract the release with the pattern `SHS(\d+\.\d+\.\d+)` and report it in its own column, leaving the RPM version in place beside it.
-A package whose release string carries no `SHS` marker is not part of the bundle, and its SHS column is empty.
+Both tools extract the release with the pattern `SHS(\d+\.\d+\.\d+)` and report it in its own `shs` field, leaving the RPM version in place beside it in `origin.version`.
+A package whose release string carries no `SHS` marker is not part of the bundle, and its `shs` field is `null`.
 Not every Slingshot package carries the marker.
 The older Cray libfabric that `prgenv-gnu/24.7` loads is the RPM `libfabric_1.15.2.0_SSHOT2.1.3` with release `1`, from before the scheme existed, so it can be placed on the Slingshot timeline only by reading its name, which the `rpm` origin records in full.
 [`system-stack`][ref-tools-system-stack] reads it for the packages it tracks by name; [`user-stack`][ref-tools-user-stack] reads it for a host library it resolved, by asking which RPM owns that file, so a host-provided [libcxi][ref-pkg-libcxi] is placed on the SHS timeline from inside a uenv.
@@ -79,7 +79,7 @@ For the Slingshot packages the declared number is the SHS release the tag belong
 | `git.59b6de6a…=main` | unknown | An untagged commit on a branch. It names no release. |
 | `13.1.0` | `13.1.0` | A plain version, already the SHS release. |
 
-[`user-stack`][ref-tools-user-stack] normalises all three forms, and reports an untagged commit as an unknown version rather than printing the commit in a version column where it would be mistaken for one.
+[`user-stack`][ref-tools-user-stack] normalises all three forms, and reports an untagged commit as an unknown version rather than reporting the commit as `version`, where it would be mistaken for one.
 The commit is not lost: it stays in the install path and in the `path` field of the JSON output, and `spack-db` can be asked for the full record by dag-hash.
 
 This is how the [cassini-headers][ref-pkg-cassini-headers], [cxi-driver][ref-pkg-cxi-driver] and [libcxi][ref-pkg-libcxi] rows of a uenv get their SHS release, so all three can be compared to the system SHS installation.

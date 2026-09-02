@@ -14,6 +14,10 @@ tells us what those objects *are* and how they depend on each other — includin
 build-only dependencies (e.g. `cassini-headers`) that never appear in a runtime
 dependency tree.
 
+Like `rpmdb`, this module degrades rather than raising: `SpackDB.open` returns
+None when there is no readable database, so a caller can run against a tree
+that has none.
+
 This module is pure standard library so it can be imported from the self-
 contained `uv` tool scripts (`spack-db`, `user-stack`) without adding
 dependencies.
@@ -27,11 +31,16 @@ import os
 DEPTYPES = ('build', 'link', 'run')
 
 
+def index_path(mount):
+    """The database file of the Spack tree rooted at ``mount``."""
+    return os.path.join(os.path.realpath(mount), '.spack-db', 'index.json')
+
+
 class Package:
     """A single installed Spack package (one entry in the database)."""
 
-    __slots__ = ('hash', 'name', 'version', 'prefix', 'explicit',
-                 'install_time', '_deps')
+    __slots__ = ('hash', 'name', 'version', 'prefix', 'explicit', '_deps',
+                 '_real_prefix')
 
     def __init__(self, dag_hash, record):
         spec = record.get('spec', {})
@@ -40,7 +49,7 @@ class Package:
         self.version = _version_str(spec.get('version'))
         self.prefix = record.get('path')
         self.explicit = bool(record.get('explicit'))
-        self.install_time = record.get('installation_time')
+        self._real_prefix = None
         # list of (hash, name, (deptype, ...))
         self._deps = []
         for dep in spec.get('dependencies', []) or []:
@@ -51,12 +60,24 @@ class Package:
                 tuple(params.get('deptypes', []) or []),
             ))
 
+    @property
+    def real_prefix(self):
+        """The install prefix, resolved once and remembered.
+
+        Provenance questions ask "is this prefix under the mount?" for every
+        package, sometimes more than once per package, and resolving a path is
+        a syscall — on a squashfs, a slow one.
+        """
+        if self._real_prefix is None and self.prefix:
+            self._real_prefix = os.path.realpath(self.prefix)
+        return self._real_prefix
+
     def dep_edges(self, types=None):
         """Return (hash, name, deptypes) edges, optionally filtered by type."""
         if types is None:
             return list(self._deps)
         want = set(types)
-        return [e for e in self._deps if want & set(e[2])]
+        return [e for e in self._deps if not want.isdisjoint(e[2])]
 
     def short(self):
         return self.hash[:7] if self.hash else '-'
@@ -82,7 +103,7 @@ class SpackDB:
 
     def __init__(self, mount):
         self.mount = os.path.realpath(mount)
-        self.path = os.path.join(self.mount, '.spack-db', 'index.json')
+        self.path = index_path(mount)
         self.version = None
         self.packages = {}          # hash -> Package
         self._by_name = {}          # name -> [hash, ...]
@@ -90,9 +111,20 @@ class SpackDB:
     # -- loading ----------------------------------------------------------
 
     @classmethod
-    def load(cls, mount):
+    def open(cls, mount):
+        """Return a loaded SpackDB, or None if there is no readable database.
+
+        Both callers want the same thing — a database if there is one — and
+        differ only in what they do without it, so the exists-then-read dance
+        lives here rather than in each of them.
+        """
         db = cls(mount)
-        db._read()
+        if not db.exists():
+            return None
+        try:
+            db._read()
+        except (OSError, ValueError, KeyError):
+            return None
         return db
 
     def _read(self):
@@ -132,9 +164,6 @@ class SpackDB:
             return [self.packages[h] for h in pref]
         return []
 
-    def by_name(self, name):
-        return [self.packages[h] for h in self._by_name.get(name, [])]
-
     def all(self, name=None, roots_only=False, internal=None):
         """Return packages, optionally filtered.
 
@@ -163,35 +192,33 @@ class SpackDB:
         """
         if not pkg or not pkg.prefix:
             return False
-        p = os.path.realpath(pkg.prefix)
+        p = pkg.real_prefix
         return p == self.mount or p.startswith(self.mount + os.sep)
 
-    def owner(self, path):
-        """Return the Package whose install prefix contains ``path``.
+    def _owner_by_prefix(self, target):
+        """The Package whose install prefix contains ``target``.
 
-        Used to map a resolved library path back to its Spack package. Picks
-        the most specific (longest) matching prefix.
+        The fallback for a path that carries no store hash. Picks the most
+        specific (longest) matching prefix.
         """
-        if not path:
-            return None
-        target = os.path.realpath(path)
         best = None
         best_len = -1
         for pkg in self.packages.values():
-            if not pkg.prefix:
+            prefix = pkg.real_prefix
+            if not prefix:
                 continue
-            prefix = os.path.realpath(pkg.prefix)
             if target == prefix or target.startswith(prefix + os.sep):
                 if len(prefix) > best_len:
                     best, best_len = pkg, len(prefix)
         return best
 
-    def owner_by_hash_in_path(self, path):
-        """Map a Spack *store* path to a package via the hash in its dir name.
+    def owner(self, path):
+        """Map a path to the Package that installed it, or None.
 
-        Store directories are named ``<name>-<version>-<hash>``; extracting the
-        trailing hash is a robust fallback when a symlinked view path does not
-        literally start with the install prefix.
+        Store directories are named ``<name>-<version>-<hash>``, so the hash in
+        the path names the package directly — which is what makes this work for
+        a view symlink whose path does not literally start with any install
+        prefix. Falls back to a prefix scan when there is no hash to read.
         """
         if not path:
             return None
@@ -201,7 +228,7 @@ class SpackDB:
             tail = part.rsplit('-', 1)[-1]
             if len(tail) == 32 and tail in self.packages:
                 return self.packages[tail]
-        return self.owner(real)
+        return self._owner_by_prefix(real)
 
     # -- graph ------------------------------------------------------------
 
@@ -227,24 +254,30 @@ class SpackDB:
             stack.extend(hh for hh, _, _ in self.packages[h].dep_edges(types))
         return list(seen.values())
 
-    def dependents(self, dag_hash, types=None, transitive=False):
-        """Return packages that depend on ``dag_hash`` (reverse edges)."""
-        direct = {}
+    def _reverse_edges(self, types=None):
+        """Return {hash: [dependent hash, ...]} over the whole database."""
+        reverse = {}
         for pkg in self.packages.values():
             for h, _, _ in pkg.dep_edges(types):
-                if h == dag_hash:
-                    direct[pkg.hash] = pkg
-                    break
-        if not transitive:
-            return list(direct.values())
-        seen = dict(direct)
-        stack = list(direct)
+                reverse.setdefault(h, []).append(pkg.hash)
+        return reverse
+
+    def dependents(self, dag_hash, types=None, transitive=False):
+        """Return packages that depend on ``dag_hash`` (reverse edges).
+
+        The reverse index is built once per call and then walked, rather than
+        rescanning every package for every hash reached: on a uenv of a few
+        hundred packages the difference is a table lookup against a quadratic
+        sweep.
+        """
+        reverse = self._reverse_edges(types)
+        seen = {}
+        stack = list(reverse.get(dag_hash, ()))
         while stack:
-            cur = stack.pop()
-            for pkg in self.packages.values():
-                if pkg.hash in seen:
-                    continue
-                if any(h == cur for h, _, _ in pkg.dep_edges(types)):
-                    seen[pkg.hash] = pkg
-                    stack.append(pkg.hash)
+            h = stack.pop()
+            if h in seen:
+                continue
+            seen[h] = self.packages[h]
+            if transitive:
+                stack.extend(reverse.get(h, ()))
         return list(seen.values())

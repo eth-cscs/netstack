@@ -57,8 +57,11 @@ Three modules in `bin/` are imported by the tools rather than run.
 
 | Module | What it holds | Imported by |
 |---|---|---|
-| `netstack.py` | The component record that both stack tools emit, and the code that renders it. | `system-stack`, `user-stack` |
+| `netstack.py` | The component record that both stack tools emit, the table renderer and `--format` flag every tool shares, and the helper that runs an external probe. | `system-stack`, `user-stack`, `spack-db` |
 | `spackdb.py` | A read-only reader for a Spack database. | `user-stack`, `spack-db` |
-| `rpmdb.py` | Read-only queries against the RPM database, by package name and by path. | `system-stack`, `user-stack` |
+| `rpmdb.py` | Read-only queries against the RPM database, by package name and by path. Both directions answer in one `rpm` call. | `system-stack`, `user-stack` |
 
 A change to any of them affects every tool that imports it, and a change to the shape of a component record affects both stack tools and the documentation that shows their tables.
+
+A tool declares *what* it collects and *which* columns it can fill, and never how a table is drawn: pretty, markdown and JSON are rendered from one column spec, so a column cannot appear in one format and be missing from another.
+Check a change to any of them against a real node, and diff all three formats before and after.

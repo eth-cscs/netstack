@@ -3,7 +3,6 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #   "rich",
-#   "tabulate",
 # ]
 # ///
 
@@ -28,18 +27,15 @@ may be given before or after the subcommand.
 """
 
 import argparse
-import json
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from spackdb import SpackDB, DEPTYPES  # noqa: E402
+from spackdb import SpackDB, DEPTYPES, index_path  # noqa: E402
 
-from rich import box  # noqa: E402
+import netstack  # noqa: E402
+
 from rich.console import Console  # noqa: E402
-from rich.style import Style  # noqa: E402
-from rich.table import Table  # noqa: E402
-from tabulate import tabulate  # noqa: E402
 
 
 def _origin(db, pkg):
@@ -67,9 +63,7 @@ def _resolve_one(db, token):
 # ---------------------------------------------------------------------------
 
 def _pkg_table(db, pkgs, title=None):
-    table = Table(box=box.ROUNDED, title=title,
-                  header_style=Style(color='bright_white', bold=True),
-                  border_style=Style(color='grey50'))
+    table = netstack.table(title=title)
     table.add_column('Package', style='bold cyan', no_wrap=True)
     table.add_column('Version', style='bright_green', no_wrap=True)
     table.add_column('Hash', style='blue', no_wrap=True)
@@ -86,9 +80,14 @@ def _pkg_table(db, pkgs, title=None):
     Console().print(table)
 
 
+def _pkg_row(db, pkg):
+    return {'name': pkg.name, 'version': pkg.version, 'hash': pkg.hash,
+            'origin': _origin(db, pkg), 'root': pkg.explicit,
+            'prefix': pkg.prefix}
+
+
 def _pkg_rows(db, pkgs):
-    return [{'name': p.name, 'version': p.version, 'hash': p.hash,
-             'origin': _origin(db, p), 'root': p.explicit, 'prefix': p.prefix}
+    return [_pkg_row(db, p)
             for p in sorted(pkgs, key=lambda p: (p.name or '', p.version or ''))]
 
 
@@ -104,7 +103,7 @@ def cmd_list(db, args):
         internal = False
     pkgs = db.all(name=args.name, roots_only=args.roots, internal=internal)
     if args.format == 'json':
-        print(json.dumps(_pkg_rows(db, pkgs), indent=2))
+        netstack.print_json(_pkg_rows(db, pkgs))
     else:
         _pkg_table(db, pkgs, title='{} packages in {}'.format(len(pkgs), db.mount))
 
@@ -113,14 +112,9 @@ def cmd_show(db, args):
     pkg = _resolve_one(db, args.package)
     edges = pkg.dep_edges()
     if args.format == 'json':
-        print(json.dumps({
-            'name': pkg.name, 'version': pkg.version, 'hash': pkg.hash,
-            'prefix': pkg.prefix, 'origin': _origin(db, pkg),
-            'root': pkg.explicit,
-            'dependencies': [
-                {'name': n, 'hash': h, 'deptypes': list(t)} for h, n, t in edges
-            ],
-        }, indent=2))
+        netstack.print_json(dict(_pkg_row(db, pkg), dependencies=[
+            {'name': n, 'hash': h, 'deptypes': list(t)} for h, n, t in edges
+        ]))
         return
     console = Console()
     console.print('[bold cyan]{}[/bold cyan]  [bright_green]{}[/bright_green]  '
@@ -131,9 +125,7 @@ def cmd_show(db, args):
     if not edges:
         console.print('  [dim]no dependencies[/dim]')
         return
-    table = Table(box=box.ROUNDED, title='direct dependencies',
-                  header_style=Style(color='bright_white', bold=True),
-                  border_style=Style(color='grey50'))
+    table = netstack.table(title='direct dependencies')
     table.add_column('Dependency', style='bold cyan', no_wrap=True)
     table.add_column('Version', style='bright_green', no_wrap=True)
     table.add_column('Hash', style='blue', no_wrap=True)
@@ -153,7 +145,7 @@ def _graph_cmd(db, args, direction):
     else:
         result = db.dependents(pkg.hash, types=types, transitive=args.transitive)
     if args.format == 'json':
-        print(json.dumps(_pkg_rows(db, result), indent=2))
+        netstack.print_json(_pkg_rows(db, result))
     else:
         rel = 'dependencies of' if direction == 'deps' else 'dependents of'
         scope = 'transitive' if args.transitive else 'direct'
@@ -163,12 +155,9 @@ def _graph_cmd(db, args, direction):
 
 
 def cmd_owner(db, args):
-    pkg = db.owner_by_hash_in_path(args.path)
+    pkg = db.owner(args.path)
     if args.format == 'json':
-        print(json.dumps(None if not pkg else {
-            'name': pkg.name, 'version': pkg.version, 'hash': pkg.hash,
-            'prefix': pkg.prefix, 'origin': _origin(db, pkg),
-        }, indent=2))
+        netstack.print_json(_pkg_row(db, pkg) if pkg else None)
         return
     if not pkg:
         print('no package owns {}'.format(os.path.realpath(args.path)))
@@ -186,6 +175,12 @@ def main():
     # Global options are accepted both before *and* after the subcommand. The
     # main parser carries the real defaults; the per-subcommand copies use
     # SUPPRESS so they only override when actually given after the subcommand.
+    #
+    # The two parsers cannot be collapsed into one with `set_defaults`: argparse
+    # parses a subcommand into a fresh namespace and copies every name it holds
+    # back over the outer one, so a real default at the subcommand level would
+    # overwrite a value given *before* the subcommand. SUPPRESS is what keeps
+    # the name out of that namespace entirely.
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument('--mount', default=None,
                         help='Spack install root / uenv mount point (required)')
@@ -196,14 +191,14 @@ def main():
     sub_common.add_argument('--format', choices=['pretty', 'json'],
                             default=argparse.SUPPRESS)
 
-    def add(name, **kw):
-        kw.setdefault('parents', []).append(sub_common)
-        return sub.add_parser(name, **kw)
-
     parser = argparse.ArgumentParser(
         parents=[common],
         description='Query the Spack database of a uenv / Spack install tree.')
     sub = parser.add_subparsers(dest='command', required=True)
+
+    def add(name, **kw):
+        kw.setdefault('parents', []).append(sub_common)
+        return sub.add_parser(name, **kw)
 
     p_list = add('list', aliases=['ls'], help='list installed packages')
     p_list.add_argument('--name', help='filter by package name')
@@ -243,11 +238,11 @@ def main():
         parser.error('--mount is required (the Spack install root / uenv mount '
                      'point, e.g. --mount /user-environment)')
 
-    db = SpackDB(args.mount)
-    if not db.exists():
+    db = SpackDB.open(args.mount)
+    if db is None:
         sys.exit('no Spack database at {} '
-                 '(is a uenv mounted, or --mount correct?)'.format(db.path))
-    db._read()
+                 '(is a uenv mounted, or --mount correct?)'.format(
+                     index_path(args.mount)))
     args.func(db, args)
 
 

@@ -2,7 +2,6 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#   "packaging",
 #   "rich",
 #   "tabulate",
 # ]
@@ -19,25 +18,20 @@ Components are reported in the shared record defined in `netstack.py`, the same
 one `user-stack` produces for the user half, so the two reports compare field by
 field.  Every component here has an RPM origin, or no origin at all when the
 package is not installed.
+
+The whole report costs a handful of `rpm` invocations: the components are asked
+for in one batch and the GCC toolchains in another, because spawning `rpm` per
+package is what makes a tool like this feel slow.
 """
 
 import argparse
-import json
 import os
 import re
-import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import netstack  # noqa: E402
 import rpmdb  # noqa: E402
-
-from packaging.version import Version
-from rich import box
-from rich.console import Console
-from rich.style import Style
-from rich.table import Table
-from tabulate import tabulate
 
 
 # Maps logical component name -> list of RPM package names to query (first match wins).
@@ -63,33 +57,13 @@ def collect_components():
     A component that is not installed keeps its row, with no origin: that a
     package the system is expected to carry is missing is itself a diagnosis.
     """
+    found = rpmdb.query_many([rpm for rpms in PACKAGES.values() for rpm in rpms])
     rows = []
     for name, rpms in PACKAGES.items():
-        record = None
-        for rpm in rpms:
-            record = rpmdb.query(rpm)
-            if record is not None:
-                break
-        if record is None:
-            rows.append(netstack.component(name))
-            continue
-        rows.append(netstack.component(
-            name,
-            version=netstack.rpm_version(record['version']),
-            version_source='rpm',
-            shs=netstack.shs_from_release(record['release']),
-            origin=netstack.origin_rpm(record),
-            prefix=record['prefix'],
-        ))
+        record = next((found[rpm] for rpm in rpms if rpm in found), None)
+        rows.append(netstack.from_rpm(name, record) if record
+                    else netstack.component(name))
     return rows
-
-
-def print_components_pretty(rows):
-    netstack.print_components_pretty(rows, COLUMNS)
-
-
-def print_components_markdown(rows):
-    netstack.print_components_markdown(rows, COLUMNS)
 
 
 # ---------------------------------------------------------------------------
@@ -114,201 +88,113 @@ def _read_os_release():
 
 def collect_properties():
     """Return a list of {key, value} dicts describing system properties."""
-    props = []
-
     os_release = _read_os_release()
     name = os_release.get('NAME', '')
     version_id = os_release.get('VERSION_ID', '')
-    if name and version_id:
-        props.append({'key': 'os', 'value': '{} {}'.format(name, version_id)})
+    driver, cuda = netstack.nvidia_versions()
 
-    cluster = os.environ.get('CLUSTER_NAME')
-    if cluster:
-        props.append({'key': 'cluster', 'value': cluster})
-
-    try:
-        smi = subprocess.run(
-            ['nvidia-smi', '--version'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        if smi.returncode == 0:
-            output = smi.stdout.decode('utf-8')
-            m = re.search(r'DRIVER version\s*:\s*([\d.]+)', output, re.IGNORECASE)
-            if m:
-                props.append({'key': 'nvidia-driver', 'value': m.group(1)})
-            m = re.search(r'CUDA Version\s*:\s*([\d.]+)', output, re.IGNORECASE)
-            if m:
-                props.append({'key': 'cuda', 'value': m.group(1)})
-    except OSError:
-        pass
-
-    return props
-
-
-def print_properties_pretty(rows):
-    table = Table(
-        box=box.ROUNDED,
-        header_style=Style(color='bright_white', bold=True),
-        border_style=Style(color='grey50'),
-        show_lines=False,
-        show_header=False,
-    )
-    table.add_column('Key',   style='bold cyan',    no_wrap=True)
-    table.add_column('Value', style='bright_green', no_wrap=True)
-
-    for row in rows:
-        table.add_row(row['key'], row['value'])
-
-    Console().print(table)
-
-
-def print_properties_markdown(rows):
-    print(tabulate([[r['key'], r['value']] for r in rows],
-                   headers=['Key', 'Value'], tablefmt='github'))
+    pairs = [
+        ('os', '{} {}'.format(name, version_id) if name and version_id else None),
+        ('cluster', os.environ.get('CLUSTER_NAME')),
+        ('nvidia-driver', driver),
+        ('cuda', cuda),
+    ]
+    return [{'key': k, 'value': v} for k, v in pairs if v]
 
 
 # ---------------------------------------------------------------------------
 # GCC detection
 # ---------------------------------------------------------------------------
 
+_GCC_MAJOR = re.compile(r'gcc(\d+)$')
+
+# The compiler drivers a gccN toolchain can provide: field name, driver
+# basename, and the package that has to be installed for it to exist.
+_GCC_LANGS = (
+    ('c',       'gcc',      'gcc{}'),
+    ('cxx',     'g++',      'gcc{}-c++'),
+    ('fortran', 'gfortran', 'gcc{}-fortran'),
+)
+
+
 def collect_gcc_data():
     """Discover all installed gccN base packages and return a list of dicts.
 
     Each dict has keys:
         'major':   int, the GCC major version (e.g. 13)
-        'version': Version or None
+        'version': str or None
         'prefix':  str or None
-        'c':       bool, base gcc compiler installed
-        'cxx':     bool, gcc{N}-c++ installed
-        'fortran': bool, gcc{N}-fortran installed
-    """
-    majors = sorted({
-        int(re.match(r'^gcc(\d+)$', name).group(1))
-        for name in rpmdb.names()
-        if re.match(r'^gcc(\d+)$', name)
-    })
+        'c', 'cxx', 'fortran': path to the compiler driver, or None
 
+    The set of installed RPM names already answers "is gcc14-fortran there?",
+    so it is asked for once and then consulted, rather than re-asking rpm for
+    every language of every toolchain.
+    """
+    installed = rpmdb.names()
+    majors = sorted(int(m.group(1)) for name in installed
+                    if (m := _GCC_MAJOR.fullmatch(name)))
+
+    bases = rpmdb.query_many(['gcc{}'.format(major) for major in majors])
     rows = []
     for major in majors:
-        base = 'gcc{}'.format(major)
-        info = rpmdb.query(base)
+        info = bases.get('gcc{}'.format(major))
+        prefix = info['prefix'] if info else None
+        version = None
         if info and info['version']:
             # Strip build metadata suffixes like +r278197 or +git9426.
-            gcc_version = Version(re.sub(r'\+.*$', '', info['version']))
-        else:
-            gcc_version = None
-        prefix = info['prefix'] if info else None
+            version = re.sub(r'\+.*$', '', info['version'])
 
-        def _exe(name, rpm):
-            if not rpmdb.installed(rpm):
-                return None
-            return '{}/bin/{}-{}'.format(prefix, name, major) if prefix else None
-
-        rows.append({
-            'major':   major,
-            'version': gcc_version,
-            'prefix':  prefix,
-            'c':       '{}/bin/gcc-{}'.format(prefix, major) if info and prefix else None,
-            'cxx':     _exe('g++',      'gcc{}-c++'.format(major)),
-            'fortran': _exe('gfortran', 'gcc{}-fortran'.format(major)),
-        })
+        row = {'major': major, 'version': version, 'prefix': prefix}
+        for field, driver, package in _GCC_LANGS:
+            row[field] = ('{}/bin/{}-{}'.format(prefix, driver, major)
+                          if prefix and package.format(major) in installed
+                          else None)
+        rows.append(row)
     return rows
 
 
-def _lang_cell(exe, fmt):
-    if fmt == 'pretty':
-        return '[bright_green]{}[/bright_green]'.format(exe) if exe else '[dim]✘[/dim]'
-    return exe if exe else '-'
+# A GCC row is not a component — the three compiler drivers have no counterpart
+# in a shared record — but it is still a table, and it is drawn by the same
+# renderer so that its pretty, markdown and JSON forms cannot drift apart.
+GCC_COLUMNS = [
+    netstack.Column('major', 'GCC', style='bold cyan',
+                    cell=lambda r: str(r['major'])),
+    netstack.Column('version', 'Version', style='bright_green'),
+    netstack.Column('c', 'C', style='bright_green', justify='center',
+                    absent='✘'),
+    netstack.Column('cxx', 'C++', style='bright_green', justify='center',
+                    absent='✘'),
+    netstack.Column('fortran', 'Fortran', style='bright_green',
+                    justify='center', absent='✘'),
+    netstack.Column('prefix', 'Prefix', style='bright_magenta'),
+]
 
 
-def print_gcc_pretty(rows):
-    table = Table(
-        box=box.ROUNDED,
-        header_style=Style(color='bright_white', bold=True),
-        border_style=Style(color='grey50'),
-        show_lines=False,
-    )
-    table.add_column('GCC',     style='bold cyan',      no_wrap=True)
-    table.add_column('Version', style='bright_green',   no_wrap=True)
-    table.add_column('C',       justify='center',       no_wrap=True)
-    table.add_column('C++',     justify='center',       no_wrap=True)
-    table.add_column('Fortran', justify='center',       no_wrap=True)
-    table.add_column('Prefix',  style='bright_magenta', no_wrap=True)
-
-    for row in rows:
-        table.add_row(
-            str(row['major']),
-            str(row['version']) if row['version'] else '[dim]-[/dim]',
-            _lang_cell(row['c'],       'pretty'),
-            _lang_cell(row['cxx'],     'pretty'),
-            _lang_cell(row['fortran'], 'pretty'),
-            row['prefix'] or '[dim]-[/dim]',
-        )
-
-    Console().print(table)
-
-
-def print_gcc_markdown(rows):
-    table = [
-        [
-            row['major'],
-            _lang_cell(row['c'],       'md'),
-            _lang_cell(row['cxx'],     'md'),
-            _lang_cell(row['fortran'], 'md'),
-            row['prefix'] or '-',
-        ]
-        for row in rows
-    ]
-    headers = ['GCC', 'C', 'C++', 'Fortran', 'Prefix']
-    print(tabulate(table, headers=headers, tablefmt='github'))
-
-
-def _gcc_rows_to_json(rows):
-    return [
-        {
-            'major':   row['major'],
-            'version': str(row['version']) if row['version'] else None,
-            'prefix':  row['prefix'],
-            'c':       row['c'],
-            'cxx':     row['cxx'],
-            'fortran': row['fortran'],
-        }
-        for row in rows
-    ]
-
-
-def print_gcc_json(rows):
-    print(json.dumps(_gcc_rows_to_json(rows), indent=2))
-
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Report installed Cray package versions.')
-    parser.add_argument(
-        '--format',
-        choices=['pretty', 'markdown', 'json'],
-        default='pretty',
-        help='Output format (default: pretty)',
-    )
+    netstack.add_format_argument(parser)
     args = parser.parse_args()
 
     prop_rows = collect_properties()
     rows      = collect_components()
     gcc_rows  = collect_gcc_data()
 
-    if args.format == 'pretty':
-        print_properties_pretty(prop_rows)
-        print_components_pretty(rows)
-        print_gcc_pretty(gcc_rows)
-    elif args.format == 'markdown':
-        print_properties_markdown(prop_rows)
-        print()
-        print_components_markdown(rows)
-        print()
-        print_gcc_markdown(gcc_rows)
-    elif args.format == 'json':
-        print(json.dumps({
+    if args.format == 'json':
+        netstack.print_json({
             'properties': prop_rows,
             'components': rows,
-            'gcc':        _gcc_rows_to_json(gcc_rows),
-        }, indent=2))
+            'gcc':        gcc_rows,
+        })
+    else:
+        netstack.print_properties([(r['key'], r['value']) for r in prop_rows],
+                                  args.format)
+        if args.format == 'markdown':
+            print()
+        netstack.print_components(rows, COLUMNS, args.format)
+        if args.format == 'markdown':
+            print()
+        netstack.print_table(gcc_rows, GCC_COLUMNS, args.format)

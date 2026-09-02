@@ -54,7 +54,7 @@ Which one loads is decided by the loader, not by the name.
 
 In `25.6` and `24.7`, libfabric is rpath-pinned by Cray MPICH to a specific `/opt/cray/libfabric/<version>`, and not to the system default `2.3.1`.
 Only the resolved path shows this.
-The `24.7` copy is owned by the RPM `libfabric_1.15.2.0_SSHOT2.1.3`, whose version carries a Slingshot stamp on its tail, so the version column reports the plain `1.15.2` and the full package name is kept in the origin.
+The `24.7` copy is owned by the RPM `libfabric_1.15.2.0_SSHOT2.1.3`, whose version carries a Slingshot stamp on its tail, so the `version` field reports the plain `1.15.2` and the full package name is kept in `origin.package`.
 
 !!! note "Release version and ABI version are different numbers"
     The store or path version, for example `2.3.1`, is the release.

@@ -35,7 +35,7 @@ It resolves ELF dependencies statically, without executing the object, and it an
 
 !!! example
     In `prgenv-gnu/25.6`, Cray MPICH is rpath-pinned to `/opt/cray/libfabric/1.22.0`, which is not the system default libfabric, and only the resolved path together with its search mechanism reveals that.
-    `user-stack` displays it in the Found via column, and falls back to `ldd` if `libtree` is not installed, losing the annotation but keeping the resolved paths.
+    `user-stack` reports it in the `via` field, and falls back to `ldd` if `libtree` is not installed, losing the annotation but keeping the resolved paths.
 
 [](){#ref-analysis-uenv-provenance}
 ### Provenance by path
@@ -76,7 +76,7 @@ The database is the source of truth for dependencies, and it exposes two things 
 
 Combining the two sources answers a question that matters for diagnosis: which NIC ABI was the fabric stack built against?
 
-When [libfabric][ref-pkg-libfabric] and [libcxi][ref-pkg-libcxi] are uenv-provided, `user-stack` lists the [cassini-headers][ref-pkg-cassini-headers] and [cxi-driver][ref-pkg-cxi-driver] they were built against as components in their own right, with the version and dag-hash taken from the database and the fabric libraries they were compiled into named in the **Found via** column.
+When [libfabric][ref-pkg-libfabric] and [libcxi][ref-pkg-libcxi] are uenv-provided, `user-stack` lists the [cassini-headers][ref-pkg-cassini-headers] and [cxi-driver][ref-pkg-cxi-driver] they were built against as components in their own right, with the version and dag-hash taken from the database and the fabric libraries they were compiled into named in the `via` field.
 Those can then be compared against the host kernel [cxi-driver][ref-pkg-cxi-driver], which [`system-stack`][ref-tools-system-stack] reports.
 
 The version those packages carry in the database is a Spack git version, which is a commit or a tag rather than a version of the package, so it is reported as an [SHS release][ref-shs-versions-uenv] in the `shs` field and the header rows carry no version of their own.
@@ -103,7 +103,7 @@ Compare like with like, by path, by hash, or by SHS release, and never across sc
 
 The [component record][ref-tools-components] keeps them apart rather than choosing between them.
 `version` is the number the component's own provider gives it, and `version_source` says which of the rows above it was read from: `rpm` for a host file the RPM database owns, `soname` or `store` for one resolved from a path.
-A version read from an RPM is the plain release, with any vendor build stamp fused to its tail left in the origin rather than in the version column.
+A version read from an RPM is the plain release, with any vendor build stamp fused to its tail left in `origin.version` rather than in `version`.
 `shs` is reported separately, because the release is the only one of these numbers that means the same thing on both sides of the split.
 
 [](){#ref-analysis-uenv-querying}

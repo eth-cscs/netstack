@@ -8,7 +8,7 @@ record, defined here, so that the two reports can be compared field by field:
     name            logical component name, the same on both sides
     version         the component's own version, as its provider names it
     version_source  how that number was obtained: rpm, store, path, soname,
-                    runtime
+                    spack, runtime
     shs             the Slingshot Host Software release it belongs to
     origin          what supplied it, or None when it is not present
     prefix          install prefix
@@ -25,21 +25,29 @@ so it is a field of its own rather than a version in disguise.
 not already at the top level: a dag-hash and the raw Spack version for a uenv
 package, an RPM name and release string for an RPM.
 
-This module is imported by both tools, which declare `rich` and `tabulate`.
+Besides the record, this module owns what both tools do with it: running an
+external probe (`run`), rendering a table of rows against a column spec
+(`Column`, `print_table`), and the `--format` flag itself.  A tool therefore
+declares *what* it collects and *which* columns it can fill, and never how a
+table is drawn — that is why the two reports look alike.
+
+`rich` and `tabulate` are imported inside the rendering functions, so importing
+this module costs nothing beyond the standard library and `--format json` never
+pays for a table renderer it does not use.
 """
 
+import os
 import re
-
-from rich import box
-from rich.console import Console
-from rich.style import Style
-from rich.table import Table
-from tabulate import tabulate
+import subprocess
 
 
 # ---------------------------------------------------------------------------
 # the record
 # ---------------------------------------------------------------------------
+
+# The ways a version can be established, in the order a reader meets them.
+VERSION_SOURCES = ('rpm', 'store', 'path', 'soname', 'spack', 'runtime')
+
 
 def component(name, version=None, version_source=None, shs=None, origin=None,
               prefix=None, path=None, via=None):
@@ -51,7 +59,7 @@ def component(name, version=None, version_source=None, shs=None, origin=None,
     return {
         'name': name,
         'version': version,
-        'version_source': version_source if version else None,
+        'version_source': version_source,
         'shs': shs,
         'origin': origin,
         'prefix': prefix,
@@ -96,6 +104,100 @@ def origin_type(row):
     """The origin type of a row: 'uenv', 'rpm', 'host', or None if absent."""
     origin = row.get('origin')
     return origin.get('type') if origin else None
+
+
+def rpm_fields(record):
+    """The component fields an `rpmdb` record establishes.
+
+    Both tools meet the same RPM from opposite directions — `system-stack` by
+    package name, `user-stack` by the path of a host library that loaded — and
+    a component reported from an RPM has to look the same either way.  That is
+    the whole point of the shared record, so the mapping lives here rather than
+    once in each tool.
+    """
+    version = rpm_version(record.get('version'))
+    return {
+        'version': version,
+        'version_source': 'rpm' if version else None,
+        'shs': shs_from_release(record.get('release')),
+        'origin': origin_rpm(record),
+        'prefix': record.get('prefix'),
+    }
+
+
+def from_rpm(name, record, **extra):
+    """A complete component record for an RPM-provided component."""
+    row = component(name, **extra)
+    row.update(rpm_fields(record))
+    return row
+
+
+def path_under(path, root):
+    """True if `path` is `root` or lives beneath it.
+
+    Both arguments are expected to be resolved already: this is called once per
+    component per mount, and resolving a constant mount point over and over is
+    the kind of waste that adds up on a squashfs.
+    """
+    if not path or not root:
+        return False
+    root = root.rstrip(os.sep)
+    return path == root or path.startswith(root + os.sep)
+
+
+# ---------------------------------------------------------------------------
+# running external probes
+# ---------------------------------------------------------------------------
+
+def run(argv, check=True):
+    """Run `argv` and return its stdout, or None if it cannot be used.
+
+    Every fact these tools report about a live system comes from some external
+    command — rpm, libtree, ldd, nvidia-smi, fi_info — and every one of them
+    may be missing, so the "absent tool is not an error" policy is written once
+    here rather than at each probe.
+
+    stderr is discarded: a probe that failed says so through its return code,
+    and several of these commands chatter on stderr when healthy (rpm warns
+    about its own backend).
+
+    `check=False` keeps the output of a command that exited non-zero, which is
+    what a multi-argument `rpm -qf` needs — the answers for the paths it could
+    resolve are still on stdout.
+    """
+    try:
+        result = subprocess.run(argv, stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL)
+    except OSError:
+        return None
+    if check and result.returncode != 0:
+        return None
+    return result.stdout.decode('utf-8', 'replace')
+
+
+def run_lines(argv, check=True):
+    """`run`, split into lines; an unusable command yields no lines."""
+    out = run(argv, check=check)
+    return out.splitlines() if out is not None else []
+
+
+_NVIDIA_DRIVER = re.compile(r'DRIVER version\s*:\s*([\d.]+)', re.IGNORECASE)
+_NVIDIA_CUDA = re.compile(r'CUDA Version\s*:\s*([\d.]+)', re.IGNORECASE)
+
+
+def nvidia_versions():
+    """Return (driver, cuda) as `nvidia-smi --version` reports them.
+
+    Both tools ask this of the same machine, and a stack is compared across the
+    two halves, so they have to read it the same way: one parser, one answer.
+    """
+    out = run(['nvidia-smi', '--version'])
+    if out is None:
+        return None, None
+    driver = _NVIDIA_DRIVER.search(out)
+    cuda = _NVIDIA_CUDA.search(out)
+    return (driver.group(1) if driver else None,
+            cuda.group(1) if cuda else None)
 
 
 # ---------------------------------------------------------------------------
@@ -179,6 +281,15 @@ def parse_git_version(version):
     return True, declared if _NUMERIC_VERSION.fullmatch(declared) else None
 
 
+def is_release_version(version):
+    """True if `version` is a version of the package rather than a git ref.
+
+    A git version names a commit or a tag.  What release that tag belongs to is
+    reported as `shs`, so a git version must never be handed back as a version.
+    """
+    return bool(version) and not parse_git_version(version)[0]
+
+
 def shs_from_spack_version(name, version):
     """SHS release a uenv package was built from, or None.
 
@@ -198,6 +309,97 @@ def shs_from_spack_version(name, version):
 # rendering
 # ---------------------------------------------------------------------------
 
+class Column:
+    """One column of a report table.
+
+    `cell` reads the value out of a row, `style_of` optionally picks a per-row
+    colour for it, and `absent` is what the pretty renderer shows in place of a
+    missing value.  Both renderers walk the same list, which is what keeps the
+    pretty, markdown and JSON views of a table from drifting apart.
+    """
+
+    __slots__ = ('key', 'header', 'style', 'cell', 'no_wrap', 'justify',
+                 'style_of', 'absent')
+
+    def __init__(self, key, header, style=None, cell=None, no_wrap=True,
+                 justify=None, style_of=None, absent='-'):
+        self.key = key
+        self.header = header
+        self.style = style
+        self.cell = cell if cell is not None else (lambda row: row.get(key))
+        self.no_wrap = no_wrap
+        self.justify = justify
+        self.style_of = style_of
+        self.absent = absent
+
+
+def table(title=None, show_header=True):
+    """A `rich` table in the house style.
+
+    Every table these tools print is built here, so the look of a report is
+    decided in one place.
+    """
+    from rich import box
+    from rich.style import Style
+    from rich.table import Table
+    return Table(box=box.ROUNDED, title=title, show_header=show_header,
+                 header_style=Style(color='bright_white', bold=True),
+                 border_style=Style(color='grey50'))
+
+
+def print_table(rows, columns, fmt, title=None, show_header=True):
+    """Print `rows` against a list of `Column`s, in `fmt`."""
+    if fmt == 'markdown':
+        _print_table_markdown(rows, columns)
+    else:
+        _print_table_pretty(rows, columns, title, show_header)
+
+
+def _print_table_pretty(rows, columns, title=None, show_header=True):
+    from rich.console import Console
+    tbl = table(title=title, show_header=show_header)
+    for col in columns:
+        tbl.add_column(col.header, style=col.style, no_wrap=col.no_wrap,
+                       justify=col.justify or 'left')
+    for row in rows:
+        cells = []
+        for col in columns:
+            value = col.cell(row)
+            if value is None or value == '':
+                cells.append('[dim]{}[/dim]'.format(col.absent))
+                continue
+            style = col.style_of(row) if col.style_of else None
+            cells.append('[{0}]{1}[/{0}]'.format(style, value) if style
+                         else str(value))
+        tbl.add_row(*cells)
+    Console().print(tbl)
+
+
+def _print_table_markdown(rows, columns):
+    from tabulate import tabulate
+    headers = [col.header for col in columns]
+    body = [[col.cell(row) if col.cell(row) not in (None, '') else '-'
+             for col in columns] for row in rows]
+    print(tabulate(body, headers=headers, tablefmt='github'))
+
+
+def print_properties(pairs, fmt, key_header='Key', value_header='Value',
+                     value_style='bright_green'):
+    """Print an ordered list of (key, value) pairs; empty values are dropped.
+
+    Both tools open their report with a block of this shape — the system
+    properties on one side, the uenv identity on the other.
+    """
+    rows = [{'key': k, 'value': v} for k, v in pairs if v]
+    columns = [Column('key', key_header, style='bold cyan'),
+               Column('value', value_header, style=value_style, no_wrap=False)]
+    print_table(rows, columns, fmt, show_header=False)
+
+
+# ---------------------------------------------------------------------------
+# the component table
+# ---------------------------------------------------------------------------
+
 _ORIGIN_STYLE = {'uenv': 'bright_green', 'rpm': 'bright_yellow',
                  'host': 'bright_yellow'}
 
@@ -211,51 +413,39 @@ def _hash(row):
     return (origin.get('hash') or '')[:7] or None
 
 
-def _origin_cell(row):
-    return origin_type(row) or _ABSENT
-
-
-# key -> (header, style, cell, no_wrap).  Found via is the one column allowed to
-# wrap, so that a narrow terminal folds the free text ("built into libcxi,
-# libfabric") rather than squeezing a version or a hash down to nothing.
-_COLUMNS = {
-    'name':    ('Component', 'bold cyan',      lambda r: r['name'],    True),
-    'version': ('Version',   'bright_green',   lambda r: r['version'], True),
-    'shs':     ('SHS',       'bright_yellow',  lambda r: r['shs'],     True),
-    'origin':  ('Origin',    None,             _origin_cell,           True),
-    'via':     ('Found via', 'blue',           lambda r: r['via'],     False),
-    'hash':    ('Hash',      'blue',           _hash,                  True),
-    'prefix':  ('Prefix',    'bright_magenta', lambda r: r['prefix'],  True),
+# Found via is the one column allowed to wrap, so that a narrow terminal folds
+# the free text ("built into libcxi, libfabric") rather than squeezing a version
+# or a hash down to nothing.
+COMPONENT_COLUMNS = {
+    'name':    Column('name', 'Component', style='bold cyan'),
+    'version': Column('version', 'Version', style='bright_green'),
+    'shs':     Column('shs', 'SHS', style='bright_yellow'),
+    'origin':  Column('origin', 'Origin',
+                      cell=lambda row: origin_type(row) or _ABSENT,
+                      style_of=lambda row: _ORIGIN_STYLE.get(origin_type(row),
+                                                             'dim')),
+    'via':     Column('via', 'Found via', style='blue', no_wrap=False),
+    'hash':    Column('hash', 'Hash', style='blue', cell=_hash),
+    'prefix':  Column('prefix', 'Prefix', style='bright_magenta'),
 }
 
 
-def print_components_pretty(rows, columns):
-    """Print a component table for the terminal."""
-    table = Table(box=box.ROUNDED,
-                  header_style=Style(color='bright_white', bold=True),
-                  border_style=Style(color='grey50'))
-    for key in columns:
-        header, style, _, no_wrap = _COLUMNS[key]
-        table.add_column(header, style=style, no_wrap=no_wrap)
-
-    for row in rows:
-        cells = []
-        for key in columns:
-            value = _COLUMNS[key][2](row)
-            if value is None:
-                cells.append('[dim]-[/dim]')
-            elif key == 'origin':
-                style = _ORIGIN_STYLE.get(origin_type(row), 'dim')
-                cells.append('[{0}]{1}[/{0}]'.format(style, value))
-            else:
-                cells.append(str(value))
-        table.add_row(*cells)
-
-    Console().print(table)
+def print_components(rows, keys, fmt):
+    """Print a component table, showing the columns named by `keys`."""
+    print_table(rows, [COMPONENT_COLUMNS[k] for k in keys], fmt)
 
 
-def print_components_markdown(rows, columns):
-    """Print a component table as a GitHub-flavoured markdown table."""
-    headers = [_COLUMNS[key][0] for key in columns]
-    table = [[_COLUMNS[key][2](row) or '-' for key in columns] for row in rows]
-    print(tabulate(table, headers=headers, tablefmt='github'))
+# ---------------------------------------------------------------------------
+# the command line
+# ---------------------------------------------------------------------------
+
+def add_format_argument(parser, formats=('pretty', 'markdown', 'json')):
+    """Add the `--format` flag both stack tools share."""
+    parser.add_argument('--format', choices=list(formats), default='pretty',
+                        help='Output format (default: pretty)')
+    return parser
+
+
+def print_json(obj):
+    import json
+    print(json.dumps(obj, indent=2))
