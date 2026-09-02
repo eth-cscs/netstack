@@ -1,7 +1,7 @@
 [](){#ref-pkg-libfabric}
 # libfabric
 
-libfabric implements the Open Fabrics Interfaces, the fabric abstraction layer that MPI and NCCL talk to, and it is where the Slingshot CXI provider lives.
+libfabric implements the Open Fabrics Interfaces, the fabric abstraction layer that MPI and NCCL talk to. It is where the Slingshot CXI provider lives.
 
 | Property | Value |
 |---|---|
@@ -14,9 +14,9 @@ libfabric implements the Open Fabrics Interfaces, the fabric abstraction layer t
 
 ## What it is
 
-libfabric exports a single API, `libfabric.so.1`, over many transports, and chooses between them at run time by selecting a provider.
-On Alps the provider that matters is `cxi`, the HPE Slingshot 11 back end that drives the NIC through [libcxi][ref-pkg-libcxi] and the [CXI driver][ref-pkg-cxi-driver].
-Everything above the fabric, meaning [Cray MPICH][ref-pkg-cray-mpich] and [NCCL][ref-pkg-nccl] through [aws-ofi-nccl][ref-pkg-aws-ofi-nccl], reaches the network through libfabric.
+libfabric exports a single API, `libfabric.so.1`, over many transports. At run time, it selects a provider to choose the transport.
+On Alps, the provider that matters is `cxi`. This is the HPE Slingshot 11 back end. It drives the NIC through [libcxi][ref-pkg-libcxi] and the [CXI driver][ref-pkg-cxi-driver].
+Everything above the fabric reaches the network through libfabric. This includes [Cray MPICH][ref-pkg-cray-mpich] and [NCCL][ref-pkg-nccl] through [aws-ofi-nccl][ref-pkg-aws-ofi-nccl].
 
 ```console title="Listing the providers and the CXI domains on a node"
 $ fi_info -l
@@ -26,8 +26,8 @@ $ fi_info -p cxi
 On a Grace-Hopper node the compiled-in providers are `cxi`, `ofi_rxm`, `udp`, `tcp` and `sockets`, along with the `ofi_hook_*` hooks.
 
 !!! warning "`strings libfabric.so` is not authoritative"
-    Grepping the library for provider names can miss `cxi`, which is compiled in but only confirmed by running `fi_info`.
-    Ask the library rather than guessing.
+    If you grep the library for provider names, you can miss `cxi`. `cxi` is compiled in, but only `fi_info` confirms this.
+    Ask the library. Do not guess.
 
 ## System or user
 
@@ -40,11 +40,11 @@ System
 User
 :   A uenv can ship its own libfabric and put it on the view path, where it replaces the system copy.
 
-Which one loads is decided by the loader, not by the name.
+The loader decides which one loads, not the name.
 
 ## Identifying it
 
-[`user-stack`][ref-tools-user-stack] resolves the libfabric that the MPI library actually links, and reports its origin along with how the loader found it.
+[`user-stack`][ref-tools-user-stack] resolves the libfabric that the MPI library actually links. It reports the origin and how the loader found it.
 
 | Environment | Version | Origin | Found via |
 |---|---|---|---|
@@ -52,18 +52,18 @@ Which one loads is decided by the loader, not by the name.
 | `prgenv-gnu/25.6:v2` | 1.22.0 | host | rpath |
 | `prgenv-gnu/24.7:v3` | 1.15.2 | rpm | rpath |
 
-In `25.6` and `24.7`, libfabric is rpath-pinned by Cray MPICH to a specific `/opt/cray/libfabric/<version>`, and not to the system default `2.3.1`.
+In `25.6` and `24.7`, Cray MPICH pins libfabric through an rpath to a specific `/opt/cray/libfabric/<version>`, not to the system default `2.3.1`.
 Only the resolved path shows this.
-The `24.7` copy is owned by the RPM `libfabric_1.15.2.0_SSHOT2.1.3`, whose version carries a Slingshot stamp on its tail, so the `version` field reports the plain `1.15.2` and the full package name is kept in `origin.package`.
+The RPM `libfabric_1.15.2.0_SSHOT2.1.3` owns the `24.7` copy. Its version carries a Slingshot stamp at the end. So the `version` field reports the plain `1.15.2`, and `origin.package` keeps the full package name.
 
 !!! note "Release version and ABI version are different numbers"
     The store or path version, for example `2.3.1`, is the release.
     The soname, for example `libfabric.so.1.29.1`, is the ABI version.
     See [version namespaces][ref-analysis-uenv-version-namespaces].
 
-### How system libfabric is installed
+### How libfabric is installed on the system
 
-`rpm -qf` against each `/opt/cray/libfabric/<version>` tree shows that the three system copies are not owned the same way.
+`rpm -qf` against each `/opt/cray/libfabric/<version>` tree shows that RPM ownership differs across the three system copies.
 
 | Path | Owning RPM | RPM version | RPM release |
 |---|---|---|---|
@@ -71,13 +71,13 @@ The `24.7` copy is owned by the RPM `libfabric_1.15.2.0_SSHOT2.1.3`, whose versi
 | `/opt/cray/libfabric/1.22.0/` | none | — | — |
 | `/opt/cray/libfabric/2.3.1/` | `libfabric` (plus a `libfabric-devel` package) | `2.3.1` | `SHS13.1.0_20260127180415_93e17abd472e` |
 
-`1.15.2.0` predates the current naming scheme: the Slingshot stamp sits inside the package *name* itself, `_SSHOT2.1.3`, rather than in the release field the way `2.3.1`'s `SHS13.1.0` does.
-`2.3.1` is the only one of the three with the modern layout, where `rpm -q` reports version and release as separate fields and the package name stays plain `libfabric`.
-`1.22.0` is owned by no RPM at all: it is the [`host`][ref-tools-components] case, a file dropped on the host outside the RPM database, so `rpm -qf` on anything under that tree comes back empty.
+`1.15.2.0` predates the current naming scheme. The Slingshot stamp sits inside the package *name* itself, `_SSHOT2.1.3`. It does not sit in the release field, the way `2.3.1`'s `SHS13.1.0` does.
+`2.3.1` is the only one of the three with the modern layout. In this layout, `rpm -q` reports version and release as separate fields, and the package name stays plain `libfabric`.
+No RPM owns `1.22.0`. It is the [`host`][ref-tools-components] case: a file placed on the host outside the RPM database. So `rpm -qf` on anything under that tree returns empty.
 
 ## Environment variables
 
-libfabric reads the `FI_*` family, including the CXI-specific `FI_CXI_*` variables, which are listed under [Environment variables][ref-envvars-libfabric].
+libfabric reads the `FI_*` family, including the CXI-specific `FI_CXI_*` variables. [Environment variables][ref-envvars-libfabric] lists this family.
 `FI_MR_CACHE_MONITOR` and `FI_CXI_RX_MATCH_MODE` are frequent diagnostic targets.
 
 ## Related

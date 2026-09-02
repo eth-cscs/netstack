@@ -9,27 +9,27 @@ In the netstack it matters as a launcher, because `srun` starts the ranks and pr
 | Spack package | `slurm` |
 | Layer | Launch |
 | Provided by | System. |
-| User-buildable | No, it is managed by the site. |
+| User-buildable | No. The site manages it. |
 | Slingshot component | No. |
 | Upstream | <https://slurm.schedmd.com/> |
 
 ## What it is
 
 Slurm schedules jobs and, through `srun`, launches the processes of a parallel job.
-Its relevant job for the netstack is process management: `srun` places ranks on nodes and speaks PMI and PMI-2 to bootstrap MPI, exchanging the information each rank needs before the fabric can be used.
-It is one of the two launch paths on Alps, the other being [cray-pals][ref-pkg-cray-pals] under `mpiexec`.
+Its relevant job for the netstack is process management. `srun` places ranks on nodes. `srun` also speaks PMI and PMI-2 to bootstrap MPI. It exchanges the information each rank needs before the ranks can use the fabric.
+It is one of the two launch paths on Alps. The other is [cray-pals][ref-pkg-cray-pals] under `mpiexec`.
 
-Slurm does not move application data, because that is the job of the fabric, meaning [libfabric][ref-pkg-libfabric] and [XPMEM][ref-pkg-xpmem].
-It is part of the picture because a wire-up handled by the wrong or a mismatched PMI is a genuine netstack failure mode.
+Slurm does not move application data. That is the job of the fabric: [libfabric][ref-pkg-libfabric] and [XPMEM][ref-pkg-xpmem].
+Slurm matters here because a wire-up that uses the wrong PMI, or a mismatched PMI, causes a genuine netstack failure.
 
 ## System or user
 
-Slurm is always a system component, installed and managed by the site.
-The RPM is `slurm`, version `25.5.4` on the reference node, and [`system-stack`][ref-tools-system-stack] reports it.
+Slurm is always a system component. The site installs and manages it.
+The RPM is `slurm`, version `25.5.4` on the reference node. [`system-stack`][ref-tools-system-stack] reports it.
 
 ## Identifying it
 
-`SLURM_*` environment variables in a job mean it was launched under Slurm.
+`SLURM_*` environment variables in a job show that Slurm launched it.
 
 ```console title="Listing the PMI plugins that Slurm can provide"
 $ srun --mpi=list

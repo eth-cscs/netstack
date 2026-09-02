@@ -4,7 +4,7 @@
 PALS, the HPE Cray Parallel Application Launch Service, is the `mpiexec` and `aprun` launcher.
 It starts jobs and feeds [PMI][ref-pkg-cray-pmi] the job layout.
 
-PALS is only usable with the PBS workload manager, and a such is not used or necessary on Alps.
+PALS only works with the PBS workload manager. Alps does not use PBS, so Alps does not need PALS.
 
 | Property | Value |
 |---|---|
@@ -17,22 +17,23 @@ PALS is only usable with the PBS workload manager, and a such is not used or nec
 
 ## What it is
 
-PALS launches the ranks of a job, places them on nodes, and provides the runtime data that MPI needs in order to come up, namely the [PMI][ref-pkg-cray-pmi] wire-up and the per-rank identity.
+PALS launches the ranks of a job and places them on nodes.
+It also gives MPI the runtime data MPI must have to start, namely the [PMI][ref-pkg-cray-pmi] wire-up and the per-rank identity.
 
 ## System or user
 
-PALS is a user component, beacuse it is installed as a dependency of cray-mpich.
+PALS is a user component, because it is a dependency of cray-mpich.
 
-The pre-compiled cray-mpich binaries are linked against libpals, so it needs to be present, despite not being used or required.
+The pre-compiled cray-mpich binaries link against libpals. PALS must therefore be present, even though nothing uses it or requires it.
 
 ## Identifying it
 
-`PALS_RANKID`, `PALS_NODEID`, `PALS_APID` and `PALS_SPOOL_DIR` in the environment mean the job was launched by PALS.
-The absence of those variables, together with the presence of only `PMI_*` and `SLURM_*`, means it was launched by Slurm instead.
+If `PALS_RANKID`, `PALS_NODEID`, `PALS_APID` and `PALS_SPOOL_DIR` are present in the environment, PALS launched the job.
+If those variables are absent, and only `PMI_*` and `SLURM_*` are present, Slurm launched the job instead.
 
 ## Environment variables
 
-The `PALS_*` family is listed under [Environment variables][ref-envvars-launcher].
+[Environment variables][ref-envvars-launcher] lists the `PALS_*` family.
 
 ## Related
 

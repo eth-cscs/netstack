@@ -1,7 +1,7 @@
 [](){#ref-pkg-cray-mpich}
 # cray-mpich
 
-Cray MPICH is HPE's MPI implementation, tuned for the Slingshot fabric, and it is the default MPI on Alps.
+Cray MPICH is HPE's MPI implementation, tuned for the Slingshot fabric. It is the default MPI on Alps.
 
 | Property | Value |
 |---|---|
@@ -14,9 +14,9 @@ Cray MPICH is HPE's MPI implementation, tuned for the Slingshot fabric, and it i
 
 ## What it is
 
-Cray MPICH is derived from [MPICH][ref-pkg-mpich] and tuned for Slingshot.
-It is ABI-compatible with MPICH `3.4a2`, using the `ch4:ofi` device, so an application built against upstream MPICH runs against it unchanged.
-It reaches the network through [libfabric][ref-pkg-libfabric] and the CXI provider, and for GPU-aware transfers it goes through [cray-gtl][ref-pkg-cray-gtl].
+HPE derives Cray MPICH from [MPICH][ref-pkg-mpich] and tunes it for Slingshot.
+It is ABI-compatible with MPICH `3.4a2`, and it uses the `ch4:ofi` device. An application built against upstream MPICH therefore runs against it unchanged.
+It reaches the network through [libfabric][ref-pkg-libfabric] and the CXI provider. For GPU-aware transfers, it goes through [cray-gtl][ref-pkg-cray-gtl].
 
 The compiler wrappers `mpicc`, `mpicxx` and `mpifort` on the view `PATH` wrap the GCC in the uenv.
 
@@ -26,7 +26,7 @@ gcc ... -lmpi_gnu_123 -lmpi_gtl_cuda ...
 $ mpichversion
 ```
 
-`mpicc -show` reveals the link line, and `mpichversion` prints the full build configuration.
+`mpicc -show` shows the link line, and `mpichversion` prints the full build configuration.
 
 ### Runtime dependencies
 
@@ -45,8 +45,8 @@ libmpi_gnu_123 → libmpi_gtl_cuda   (GPU-aware transfers, cray-gtl)
 Cray MPICH is a user component.
 It comes from the uenv, or from a `cray-mpich` module, and it appears directly on the view path.
 
-Its dependencies can fall on either side of the split, in particular [libfabric][ref-pkg-libfabric] and [libcxi][ref-pkg-libcxi].
-Those are covered on their own pages.
+For some dependencies, in particular [libfabric][ref-pkg-libfabric] and [libcxi][ref-pkg-libcxi], the system provides one component and the user provides another.
+Their own pages cover them.
 
 ## Identifying it
 
@@ -60,11 +60,11 @@ Those are covered on their own pages.
 
 ## Environment variables
 
-Cray MPICH reads the `MPICH_*` family, which is listed under [Environment variables][ref-envvars-mpich].
-The ones that matter most for the netstack are `MPICH_GPU_SUPPORT_ENABLED`, which needs [cray-gtl][ref-pkg-cray-gtl], `MPICH_OFI_NIC_POLICY` and `MPICH_SMP_SINGLE_COPY_MODE`.
+Cray MPICH reads the `MPICH_*` family. [Environment variables][ref-envvars-mpich] lists this family.
+The variables that matter most for the netstack are `MPICH_GPU_SUPPORT_ENABLED`, `MPICH_OFI_NIC_POLICY` and `MPICH_SMP_SINGLE_COPY_MODE`. `MPICH_GPU_SUPPORT_ENABLED` needs [cray-gtl][ref-pkg-cray-gtl].
 
 !!! tip "Start a diagnosis by printing the settings"
-    `MPICH_ENV_DISPLAY=1` prints every MPICH variable and its value at startup, which shows what the defaults resolved to rather than only what you set.
+    Set `MPICH_ENV_DISPLAY=1` to print every MPICH variable and its value at startup. This shows the resolved value of each default, not only the variables you set.
 
 ## Related
 

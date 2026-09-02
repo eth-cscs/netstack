@@ -1,7 +1,7 @@
 [](){#ref-pkg-mpich}
 # mpich
 
-MPICH is the reference implementation of the MPI standard, and the implementation that [Cray MPICH][ref-pkg-cray-mpich] is derived from and ABI-compatible with.
+MPICH is the reference implementation of the MPI standard. [Cray MPICH][ref-pkg-cray-mpich] derives from MPICH and is ABI-compatible with it.
 
 | Property | Value |
 |---|---|
@@ -17,12 +17,12 @@ MPICH is the reference implementation of the MPI standard, and the implementatio
 MPICH is relevant to the netstack for two reasons.
 
 ABI compatibility
-:   [Cray MPICH][ref-pkg-cray-mpich] implements the MPICH `3.4a2` ABI, so binaries built against upstream `mpich` can run against Cray MPICH and the other way round.
-    This is why the role reported by [`user-stack`][ref-tools-user-stack] reads "ABI-compatible MPICH".
+:   [Cray MPICH][ref-pkg-cray-mpich] implements the MPICH `3.4a2` ABI. A binary built against upstream `mpich` can run against Cray MPICH. A binary built against Cray MPICH can also run against upstream `mpich`.
+    This is why [`user-stack`][ref-tools-user-stack] reports the role as "ABI-compatible MPICH".
 
 An alternative MPI
-:   You can build `mpich` with the `ch4:ofi` device against [libfabric][ref-pkg-libfabric] and the CXI provider, and run over Slingshot without Cray MPICH.
-    On Alps the Cray build is preferred, because of its fabric tuning.
+:   You can build `mpich` with the `ch4:ofi` device against [libfabric][ref-pkg-libfabric] and the CXI provider. You can then run it over Slingshot without Cray MPICH.
+    On Alps, the Cray build has better fabric tuning, so it is the default choice.
 
 ## System or user
 
@@ -34,7 +34,7 @@ This page documents the package for completeness, and for environments that choo
 ## Identifying it
 
 `mpichversion` distinguishes the two builds.
-A Cray build reports Cray-specific configure flags and a `GTL-built-with` custom string, and a plain build does not.
+A Cray build reports Cray-specific configure flags and a `GTL-built-with` custom string. A plain build does not report these.
 
 If the MPI library resolves to a Spack store directory named `mpich-*` rather than `cray-mpich-*`, it is upstream MPICH.
 

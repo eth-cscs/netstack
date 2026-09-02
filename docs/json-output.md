@@ -1,14 +1,14 @@
 [](){#ref-json-output}
 # JSON output
 
-`system-stack` and `user-stack` both accept `--format json`, which is the machine-readable form of the same report `pretty` and `markdown` print as a table.
-Every field described on this page is present in the JSON, even where a table cell would show a `-` for a value that is absent.
-This page is the schema reference; [Tools][ref-tools] describes how to run the tools themselves.
+`system-stack` and `user-stack` both accept `--format json`. This is the machine-readable form of the same report that `pretty` and `markdown` print as a table.
+Every field on this page appears in the JSON, even where a table cell shows a `-` for a missing value.
+This page is the schema reference. [Tools][ref-tools] describes how to run the tools themselves.
 
 [](){#ref-json-output-components}
 ## Components
 
-Both tools report their `components` field as a list of records built from the same shared vocabulary, defined once in `netstack.py` and described in full in [the component record][ref-tools-components].
+Both tools report their `components` field as a list of records. The records share one vocabulary, defined once in `netstack.py`. [The component record][ref-tools-components] describes it in full.
 
 | Field | What it holds |
 |---|---|
@@ -21,7 +21,7 @@ Both tools report their `components` field as a list of records built from the s
 | `path` | The file that was resolved, for a component found by runtime resolution. |
 | `via` | How the dynamic loader found it. |
 
-`origin` takes one of four shapes, and holds the evidence specific to what supplied the component rather than anything already reported at the top level.
+`origin` takes one of four shapes. It holds the evidence specific to what supplied the component, not anything already reported at the top level.
 
 ### `origin.type: "uenv"`
 
@@ -46,7 +46,7 @@ A package the uenv built, identified by its Spack dag-hash.
 ```
 
 `origin.hash` is the full 32-character Spack dag-hash.
-The pretty and markdown tables show only its first seven characters, for width, so `ekke44pxlz6r3xg5o4h2b7c1v9wq0djk` above is the same package the [Tools][ref-tools-user-stack] example table shows truncated as `ekke44p`.
+The pretty and markdown tables show only its first seven characters, to save width. So `ekke44pxlz6r3xg5o4h2b7c1v9wq0djk` above is the same package that the [Tools][ref-tools-user-stack] example table shows truncated as `ekke44p`.
 
 ### `origin.type: "rpm"`
 
@@ -71,7 +71,7 @@ A package in the host image, identified by its full RPM name.
 }
 ```
 
-`version` at the top level is the plain release trimmed out of `origin.version`; see [`rpm_version`][ref-shs] for a case where the two differ, such as `libfabric`'s older `1.15.2.0_SSHOT2.1.3`.
+`version` at the top level is the plain release trimmed out of `origin.version`. See [`rpm_version`][ref-shs] for a case where the two differ, such as `libfabric`'s older `1.15.2.0_SSHOT2.1.3`.
 
 ### `origin.type: "host"`
 
@@ -92,13 +92,13 @@ A file on the host that no RPM owns.
 }
 ```
 
-`/opt/cray/libfabric/1.22.0` is the canonical example: `rpm -qf` against anything under that tree comes back empty, so `origin` carries nothing beyond its `type`.
-See [the RPMs behind the system copies][ref-pkg-libfabric] for how this was confirmed.
+`/opt/cray/libfabric/1.22.0` is the canonical example. `rpm -qf` against anything under that tree returns nothing, so `origin` carries nothing beyond its `type`.
+See [the RPMs behind the system copies][ref-pkg-libfabric] for how the tools confirmed this.
 
 ### No origin
 
-A component that was looked for and not found keeps its row, with `origin` set to `null`.
-`system-stack` includes such rows, because a package the system is expected to carry being missing is itself a diagnosis; `user-stack` omits them entirely.
+A component the tools looked for but did not find keeps its row, with `origin` set to `null`.
+`system-stack` includes such rows, because a missing package that the system expects is itself a diagnosis. `user-stack` omits them entirely.
 
 ```json title="A tracked package that is not installed, from system-stack"
 {
@@ -126,7 +126,7 @@ A component that was looked for and not found keeps its row, with `origin` set t
 
 `components` is the list described in [Components][ref-json-output-components] above.
 
-`properties` is a flat list of `{"key": str, "value": str}` pairs describing the system itself, not a component: the OS, the cluster name, and the NVIDIA driver and CUDA versions where a GPU is present.
+`properties` is a flat list of `{"key": str, "value": str}` pairs that describe the system itself, not a component. Examples are the OS, the cluster name, and the NVIDIA driver and CUDA versions where a GPU is present.
 
 ```json title="One entry of properties"
 { "key": "cluster", "value": "daint" }
@@ -181,13 +181,13 @@ A GCC major version with `c: null` means the base `gcc{N}` package itself is mis
 ["cxi", "ofi_rxm", "udp", "tcp", "sockets"]
 ```
 
-`envvars` is the list of netstack-relevant [environment variables][ref-envvars] that are currently set, each paired with the component it affects:
+`envvars` is the list of netstack-relevant [environment variables][ref-envvars] that are currently set. Each entry pairs a variable with the component it affects:
 
 ```json title="One entry of envvars"
 { "name": "FI_MR_CACHE_MONITOR", "value": "kdreg2", "component": "libfabric" }
 ```
 
-When no uenv view is loaded, `user-stack --format json` prints a single error object instead of this envelope:
+Without a loaded uenv view, `user-stack --format json` prints a single error object instead of this envelope:
 
 ```json title="user-stack --format json outside a uenv"
 { "error": "no uenv view is loaded" }

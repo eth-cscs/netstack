@@ -1,7 +1,8 @@
 [](){#ref-pkg-cassini-headers}
 # cassini-headers
 
-`cassini-headers` holds the hardware definitions and C headers for the Cassini, that is Slingshot, NIC, and they are shared by the kernel driver, by [libcxi][ref-pkg-libcxi] and by the [libfabric][ref-pkg-libfabric] CXI provider.
+`cassini-headers` holds the hardware definitions and C headers for the Cassini NIC, that is, the Slingshot NIC.
+The kernel driver, [libcxi][ref-pkg-libcxi] and the [libfabric][ref-pkg-libfabric] CXI provider all share these headers.
 
 | Property | Value |
 |---|---|
@@ -14,20 +15,20 @@
 
 ## What it is
 
-`cassini-headers` is a headers-only package containing hardware register definitions and C ABI headers for the HPE Cassini high-speed interconnect.
-It is consumed at build time by everything in the Slingshot stack that needs to know the NIC ABI, namely the [cxi-driver][ref-pkg-cxi-driver], [libcxi][ref-pkg-libcxi] and the CXI provider inside [libfabric][ref-pkg-libfabric].
+`cassini-headers` is a headers-only package. It contains hardware register definitions and C ABI headers for the HPE Cassini high-speed interconnect.
+Every component in the Slingshot stack that must know the NIC ABI consumes these headers at build time. These components are the [cxi-driver][ref-pkg-cxi-driver], [libcxi][ref-pkg-libcxi] and the CXI provider inside [libfabric][ref-pkg-libfabric].
 
 It has no runtime library and never appears in a dependency tree.
-It matters because the header version that a component was built against defines the NIC ABI that the component expects.
+It matters because the header version used to build a component defines the NIC ABI that the component expects.
 
 ## System or user
 
 System
 :   The RPM `cray-cassini-headers-user`, version `1.1.2` in `SHS13.1.0`, with prefix `/usr`.
-    These are used when building against the system Slingshot stack.
+    You use these when you build against the system Slingshot stack.
 
 User, at build time
-:   A uenv that builds its own [libcxi][ref-pkg-libcxi] or [libfabric][ref-pkg-libfabric] pins a `cassini-headers` version.
+:   If a uenv builds its own [libcxi][ref-pkg-libcxi] or [libfabric][ref-pkg-libfabric], it pins a `cassini-headers` version.
     `prgenv-gnu/25.11` carries a `cassini-headers-git.…_main` store entry.
 
 ## Identifying it
@@ -37,8 +38,8 @@ $ rpm -q cray-cassini-headers-user
 ```
 
 [`system-stack`][ref-tools-system-stack] reports `cassini-headers` together with its SHS release.
-In a uenv build the headers appear as a `cassini-headers-*` directory in the Spack store, as a build dependency, but nothing appears on `LD_LIBRARY_PATH`.
-[Build provenance][ref-analysis-uenv-build-provenance] describes how to compare the headers a library was built against with the host driver.
+In a uenv build, the headers appear as a `cassini-headers-*` directory in the Spack store, as a build dependency. Nothing appears on `LD_LIBRARY_PATH`.
+[Build provenance][ref-analysis-uenv-build-provenance] describes how to compare the headers used to build a library with the host driver.
 
 ## Related
 
