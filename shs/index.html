@@ -1,0 +1,1566 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://eth-cscs.github.io/netstack/shs/">
+      
+      
+        <link rel="prev" href="../envvars/">
+      
+      
+        <link rel="next" href="../packages/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Slingshot Host Software - Netstack</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#slingshot-host-software-shs" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Netstack" class="md-header__button md-logo" aria-label="Netstack" data-md-component="logo">
+      
+  <img src="../assets/cscs-logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Netstack
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Slingshot Host Software
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="white" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/eth-cscs/netstack" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Netstack" class="md-nav__button md-logo" aria-label="Netstack" data-md-component="logo">
+      
+  <img src="../assets/cscs-logo.png" alt="logo">
+
+    </a>
+    Netstack
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/eth-cscs/netstack" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../json-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JSON output
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../envvars/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Slingshot Host Software
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Slingshot Host Software
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-in-shs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is in SHS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-detect-the-shs-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to detect the SHS version
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How to detect the SHS version">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#on-the-host-from-the-rpm-release-string" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On the host, from the RPM release string
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-a-uenv-from-the-spack-git-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In a uenv, from the Spack git version
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-compare-the-two-sides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to compare the two sides
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../packages/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Packages
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Packages
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cxi-driver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cxi-driver
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cuda-driver/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuda-driver
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cuda/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cuda
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/libcxi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    libcxi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cassini-headers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cassini-headers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/libfabric/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    libfabric
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/xpmem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    xpmem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cray-gtl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cray-gtl
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cray-pmi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cray-pmi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/pmix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pmix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cray-pals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cray-pals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/slurm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    slurm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/cray-mpich/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cray-mpich
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/mpich/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    mpich
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/openmpi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    openmpi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/nccl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    nccl
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/aws-ofi-nccl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    aws-ofi-nccl
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../analysis/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analysis
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Analysis
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analysis/uenv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analysing a uenv
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-in-shs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is in SHS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-detect-the-shs-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to detect the SHS version
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How to detect the SHS version">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#on-the-host-from-the-rpm-release-string" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On the host, from the RPM release string
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-a-uenv-from-the-spack-git-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In a uenv, from the Spack git version
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-compare-the-two-sides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to compare the two sides
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/eth-cscs/netstack/edit/main/docs/shs.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75z"/></svg>
+    </a>
+  
+  
+
+
+<p><a href="" id="ref-shs"></a></p>
+<h1 id="slingshot-host-software-shs">Slingshot Host Software (SHS)<a class="headerlink" href="#slingshot-host-software-shs" title="Permanent link">&para;</a></h1>
+<p>HPE Slingshot Host Software is the software that HPE ships for the Slingshot interconnect of an HPE Cray EX system.
+SHS is a <em>release bundle</em>, not a single package. One SHS version, for example <code>13.1.0</code>, names a kernel driver, a set of user-space libraries and a set of headers. HPE builds, tests and releases these together.</p>
+<p>You diagnose fabric problems by comparing SHS versions. SHS is the only number that both halves of the <a class="autorefs autorefs-internal" title="User components" href="../#user-components">system/user split</a> share.
+The versions of <code>cxi-driver</code>, <code>cassini-headers</code> and <code>libcxi</code> in a software stack must belong to the same SHS release. HPE tests and packages them this way.
+If a user software stack provides one or more of these packages, you must check that they are compatible with the system SHS installation.</p>
+<div class="admonition note">
+<p class="admonition-title">This page is a working set of notes</p>
+<p>This page records what we know about SHS. We update it as the tooling grows. We do not write it once and leave it unchanged.
+We observed everything below on <code>daint</code>, and we give a date where it matters.</p>
+</div>
+<p><a href="" id="ref-shs-contents"></a></p>
+<h2 id="what-is-in-shs">What is in SHS<a class="headerlink" href="#what-is-in-shs" title="Permanent link">&para;</a></h2>
+<p>The netstack tools track two parts of SHS: the Slingshot NIC driver, and the user-space stack that talks to it.
+Each one exists twice: as an RPM in the host OS image, and as a Spack package that a uenv can build for itself.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Host RPM</th>
+<th>Spack package</th>
+<th>Upstream repository</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="autorefs autorefs-internal" href="../packages/cxi-driver/#cxi-driver">cxi-driver</a></td>
+<td><code>cray-cxi-driver-devel</code></td>
+<td><code>cxi-driver</code></td>
+<td><a href="https://github.com/HewlettPackard/shs-cxi-driver">shs-cxi-driver</a></td>
+</tr>
+<tr>
+<td><a class="autorefs autorefs-internal" href="../packages/cassini-headers/#cassini-headers">cassini-headers</a></td>
+<td><code>cray-cassini-headers-user</code></td>
+<td><code>cassini-headers</code></td>
+<td><a href="https://github.com/HewlettPackard/shs-cassini-headers">shs-cassini-headers</a></td>
+</tr>
+<tr>
+<td><a class="autorefs autorefs-internal" href="../packages/libcxi/#libcxi">libcxi</a></td>
+<td><code>cray-libcxi</code></td>
+<td><code>libcxi</code></td>
+<td><a href="https://github.com/HewlettPackard/shs-libcxi">shs-libcxi</a></td>
+</tr>
+<tr>
+<td><a class="autorefs autorefs-internal" href="../packages/libfabric/#libfabric">libfabric</a></td>
+<td><code>libfabric</code></td>
+<td><code>libfabric</code></td>
+<td>upstream OFI, with the HPE <code>cxi</code> provider</td>
+</tr>
+</tbody>
+</table>
+<p>Not everything in the netstack comes from SHS.
+<a class="autorefs autorefs-internal" href="../packages/xpmem/#xpmem">xpmem</a>, Slurm and Lustre are host software with their own release cycles. <a class="autorefs autorefs-internal" href="../tools/#system-stack"><code>system-stack</code></a> reports no SHS release for them.</p>
+<p>This is what <code>daint</code>, an SHS 13.1.0 host, had installed in September 2026:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>RPM version</th>
+<th>SHS</th>
+<th>Prefix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cassini-headers</td>
+<td>1.1.2</td>
+<td>13.1.0</td>
+<td><code>/usr</code></td>
+</tr>
+<tr>
+<td>libcxi</td>
+<td>1.0.2</td>
+<td>13.1.0</td>
+<td><code>/usr</code></td>
+</tr>
+<tr>
+<td>cxi-driver</td>
+<td>1.0.0</td>
+<td>13.1.0</td>
+<td><code>/usr</code></td>
+</tr>
+<tr>
+<td>libfabric</td>
+<td>2.3.1</td>
+<td>13.1.0</td>
+<td><code>/opt/cray/libfabric/2.3.1</code></td>
+</tr>
+</tbody>
+</table>
+<p>The RPM version and the SHS release are different numbers. You cannot derive one from the other.
+<code>cray-libcxi</code> is at <code>1.0.2</code> inside SHS <code>13.1.0</code>. The soname of the same library is a third number, <code>1.5.0</code>.
+See <a class="autorefs autorefs-internal" title="Version namespaces" href="../analysis/uenv/#version-namespaces">version namespaces</a> for the full list of numbers that describe one library.</p>
+<p><a href="" id="ref-shs-versions"></a></p>
+<h2 id="how-to-detect-the-shs-version">How to detect the SHS version<a class="headerlink" href="#how-to-detect-the-shs-version" title="Permanent link">&para;</a></h2>
+<p><a href="" id="ref-shs-versions-host"></a></p>
+<h3 id="on-the-host-from-the-rpm-release-string">On the host, from the RPM release string<a class="headerlink" href="#on-the-host-from-the-rpm-release-string" title="Permanent link">&para;</a></h3>
+<p>The SHS release is not the RPM version. It appears in the RPM <em>release</em> field, together with a build timestamp and a short commit:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cray-libcxi-1.0.2-SHS13.1.0_20260127170946_9d460216fdc4
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                  ^^^^^^^^^ ^^^^^^^^^^^^^^ ^^^^^^^^^^^^
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                  SHS        build date     upstream commit
+</span></code></pre></div>
+<p>Both tools extract the release with the pattern <code>SHS(\d+\.\d+\.\d+)</code> and report it in its own <code>shs</code> field. They leave the RPM version in place, beside it, in <code>origin.version</code>.
+A package whose release string carries no <code>SHS</code> marker is not part of the bundle. Its <code>shs</code> field is <code>null</code>.
+Not every Slingshot package carries the marker.
+The older Cray libfabric that <code>prgenv-gnu/24.7</code> loads is the RPM <code>libfabric_1.15.2.0_SSHOT2.1.3</code>, with release <code>1</code>. This RPM predates the SHS release-string scheme. You can place it on the Slingshot timeline only if you read its name. The <code>rpm</code> origin records the name in full.
+<a class="autorefs autorefs-internal" href="../tools/#system-stack"><code>system-stack</code></a> tracks packages by name, and reads the RPM name to place them on the timeline. <a class="autorefs autorefs-internal" href="../tools/#user-stack"><code>user-stack</code></a> resolves a host library to a file, then asks which RPM owns that file, and reads the RPM name the same way. This places a host-provided <a class="autorefs autorefs-internal" href="../packages/libcxi/#libcxi">libcxi</a> on the SHS timeline, from inside a uenv.</p>
+<div class="admonition tip">
+<p class="admonition-title">The commit in the release string is the upstream tag</p>
+<p>On <code>daint</code>, the commit in the <code>cray-libcxi</code> release string is <code>9d460216fdc4</code>. This is the same commit that the Spack package gives for <code>libcxi@13.1.0</code>. Upstream, HPE tags this commit <code>release/shs-13.1.0</code>.
+The same holds for <code>cray-cxi-driver-devel</code> and <code>a1d91b2b0cca</code>.
+It does <em>not</em> hold for <code>cray-cassini-headers-user</code>. Its release string names <code>9acaff3b975a</code>, while the <code>13.1.0</code> tag is <code>2f6e60a4</code>. So the correspondence is a useful hint, not a rule you can rely on.</p>
+</div>
+<p><a href="" id="ref-shs-versions-uenv"></a></p>
+<h3 id="in-a-uenv-from-the-spack-git-version">In a uenv, from the Spack git version<a class="headerlink" href="#in-a-uenv-from-the-spack-git-version" title="Permanent link">&para;</a></h3>
+<p>A uenv builds these packages straight from HPE&rsquo;s github repositories, so Spack records a <em>git version</em> rather than a release number.
+A git version has the form <code>git.&lt;ref&gt;</code>. It can optionally continue with <code>=</code> and then the version that the reference stands for.
+For the Slingshot packages, the declared number is the SHS release that the tag belongs to, not a version of the package itself.</p>
+<table>
+<thead>
+<tr>
+<th>Spack version</th>
+<th>SHS release reported</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git.release/shs-13.0.0=13.0.0</code></td>
+<td><code>13.0.0</code></td>
+<td>A release tag, with the SHS release after the <code>=</code>.</td>
+</tr>
+<tr>
+<td><code>git.59b6de6a…=main</code></td>
+<td>unknown</td>
+<td>An untagged commit on a branch. It names no release.</td>
+</tr>
+<tr>
+<td><code>13.1.0</code></td>
+<td><code>13.1.0</code></td>
+<td>A plain version, already the SHS release.</td>
+</tr>
+</tbody>
+</table>
+<p><a class="autorefs autorefs-internal" href="../tools/#user-stack"><code>user-stack</code></a> normalises all three forms. It reports an untagged commit as an unknown version. It does not report the commit itself as the <code>version</code>, because that would be mistaken for a real version.
+The commit is not lost. It stays in the install path and in the <code>path</code> field of the JSON output. You can ask <code>spack-db</code> for the full record by dag-hash.</p>
+<p>This is how the <a class="autorefs autorefs-internal" href="../packages/cassini-headers/#cassini-headers">cassini-headers</a>, <a class="autorefs autorefs-internal" href="../packages/cxi-driver/#cxi-driver">cxi-driver</a> and <a class="autorefs autorefs-internal" href="../packages/libcxi/#libcxi">libcxi</a> rows of a uenv get their SHS release. You can then compare all three to the system SHS installation.
+<code>user-stack</code> reports the release in the <code>shs</code> field, not as the component&rsquo;s version, because the release belongs to the bundle, not the package. For example, a uenv&rsquo;s libcxi reports the soname <code>1.5.0</code> as its version and <code>13.0.0</code> as its SHS release. Both are true of the same file.</p>
+<div class="admonition warning">
+<p class="admonition-title">A tag that is absent is not a release that is absent</p>
+<p>An unknown version for a package in a uenv means the package came from an untagged commit.
+Older versions of the <code>cassini-headers</code>, <code>lib-cxi</code> and other Spack packages referred directly to commit SHAs on the <code>main</code> branch. So we cannot associate these commits with specific versions.
+The <code>prgenv-gnu/25.11</code> uenv follows this pattern.</p>
+</div>
+<p>Spack renders the same version into a store directory. It replaces both <code>=</code> and <code>/</code> with <code>_</code>. So <code>git.release/shs-13.0.0=13.0.0</code> becomes the directory <code>libcxi-git.release_shs-13.0.0_13.0.0-&lt;hash&gt;</code>.
+The tools recognise both spellings. Trust the database form.</p>
+<p><a href="" id="ref-shs-versions-comparing"></a></p>
+<h2 id="how-to-compare-the-two-sides">How to compare the two sides<a class="headerlink" href="#how-to-compare-the-two-sides" title="Permanent link">&para;</a></h2>
+<p>Once both sides report an SHS release, the comparison is direct.</p>
+<div class="admonition example">
+<p class="admonition-title">A uenv one SHS release behind its host</p>
+<p>In April 2026, <code>prgenv-gnu/26.3</code> came from SHS <code>13.0.0</code>: <code>cassini-headers</code>, <code>cxi-driver</code> and <code>libcxi</code> all report <code>13.0.0</code>. At the same time, <code>daint</code> ran an SHS <code>13.1.0</code> host.
+A compatibility check must find that difference. It is invisible to <code>ldd</code>. <code>ldd</code> never sees a header package at all.</p>
+</div>
+<p>The pairing that matters is the uenv&rsquo;s <a class="autorefs autorefs-internal" href="../packages/cxi-driver/#cxi-driver">cxi-driver</a> headers against the host&rsquo;s kernel driver. This is the interface that must agree at run time.
+<a class="autorefs autorefs-internal" href="../analysis/uenv/#build-provenance">Build provenance</a> describes how <code>user-stack</code> recovers the header versions from a uenv.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.action.edit", "navigation.indexes", "search.share", "navigation.instant", "navigation.tracking", "navigation.path", "navigation.top", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
