@@ -39,7 +39,7 @@ in `netstack.py`.
 
 Which components to look for is a table, `_SPECS_FABRIC` and `_SPECS_RUNTIME`
 below: a name, the sonames to recognise in the dependency tree, the view globs
-to fall back on, and where its version is written.  Only the parts that genuinely
+to fall back on, and where its version is written.  Only the parts that
 are not uniform stay as code — deciding which MPI is installed, and reading the
 Slingshot headers out of the Spack build edges.
 """
