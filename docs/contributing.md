@@ -1,7 +1,7 @@
 [](){#ref-contributing}
 # Contributing
 
-This documentation uses the [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) framework.
+This documentation uses the [Zensical](https://zensical.org/) framework.
 
 ## Before starting
 
@@ -268,7 +268,7 @@ This table is layout, not comparison, and the documentation uses it only on thes
 
 ### Using admonitions
 
-Use [admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/) for examples, notes and warnings when appropriate.
+Use [admonitions](https://zensical.org/docs/authoring/admonitions/) for examples, notes and warnings when appropriate.
 They stand out from the main text, and you can collapse them by default.
 
 !!! example "Example one"
@@ -314,7 +314,7 @@ Use this admonition to record information about a change. It was originally desi
 
 ### Code blocks
 
-Use [code blocks](https://squidfunk.github.io/mkdocs-material/reference/code-blocks/) to display monospace text, such as source code, terminal output, or configuration files.
+Use [code blocks](https://zensical.org/docs/authoring/code-blocks/) to display monospace text, such as source code, terminal output, or configuration files.
 The documentation uses [pygments](https://pygments.org) for highlighting.
 See the [list of available lexers](https://pygments.org/docs/lexers/#) for the languages you can use in code blocks.
 
@@ -337,7 +337,7 @@ Use [`console`](https://pygments.org/docs/lexers/#pygments.lexers.shell.BashSess
     ```
 
 !!! warning
-    `terminal` is not a valid lexer, but MkDocs and pygments do not warn you when you use it as a language.
+    `terminal` is not a valid lexer, but Zensical and pygments do not warn you when you use it as a language.
     The text renders without highlighting.
 
 !!! warning

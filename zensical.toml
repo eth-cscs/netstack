@@ -1,0 +1,153 @@
+[project]
+site_name = "Netstack"
+site_url  = "https://eth-cscs.github.io/netstack"
+
+# provide a link to the docs in top RHS corner
+repo_url  = "https://github.com/eth-cscs/netstack"
+repo_name = "eth-cscs/netstack"
+# provide a link to "edit this page" to each page
+edit_uri  = "edit/main/docs/"
+docs_dir  = "docs"
+
+extra_css = ["stylesheets/extra.css"]
+extra_javascript = ["javascripts/search-styling.js"]
+
+nav = [
+  "index.md",
+  {"Tools" = "tools.md"},
+  {"JSON output" = "json-output.md"},
+  {"Environment variables" = "envvars.md"},
+  {"Slingshot Host Software" = "shs.md"},
+  {"Packages" = [
+    "packages/index.md",
+    {"cxi-driver" = "packages/cxi-driver.md"},
+    {"cuda-driver" = "packages/cuda-driver.md"},
+    {"cuda" = "packages/cuda.md"},
+    {"libcxi" = "packages/libcxi.md"},
+    {"cassini-headers" = "packages/cassini-headers.md"},
+    {"libfabric" = "packages/libfabric.md"},
+    {"xpmem" = "packages/xpmem.md"},
+    {"cray-gtl" = "packages/cray-gtl.md"},
+    {"cray-pmi" = "packages/cray-pmi.md"},
+    {"pmix" = "packages/pmix.md"},
+    {"cray-pals" = "packages/cray-pals.md"},
+    {"slurm" = "packages/slurm.md"},
+    {"cray-mpich" = "packages/cray-mpich.md"},
+    {"mpich" = "packages/mpich.md"},
+    {"openmpi" = "packages/openmpi.md"},
+    {"nccl" = "packages/nccl.md"},
+    {"aws-ofi-nccl" = "packages/aws-ofi-nccl.md"},
+  ]},
+  {"Analysis" = [
+    "analysis/index.md",
+    {"Analysing a uenv" = "analysis/uenv.md"},
+  ]},
+  {"Contributing" = "contributing.md"},
+]
+
+# Validation: the docs are built with --strict, so every one of these is an
+# error that fails the build.
+# Unresolved autorefs are always reported, and are not configurable here.
+[project.validation]
+# a link to a page that does not exist
+invalid_links = true
+# a link to an anchor that does not exist on the target page
+invalid_link_anchors = true
+# must stay disabled: every [text][ref-...] link in the docs is an autoref, not
+# a Markdown reference link, so this flags all of them
+unresolved_references = false
+unresolved_footnotes = true
+unused_definitions = true
+unused_footnotes = true
+shadowed_definitions = true
+shadowed_footnotes = true
+
+[project.theme]
+# "classic" reproduces the Material for MkDocs look
+variant    = "classic"
+language   = "en"
+logo       = "assets/cscs-logo.png"
+favicon    = "assets/favicon.ico"
+custom_dir = "overrides"
+features   = [
+  "content.code.copy",
+  # add an "edit this page" icon on each page
+  "content.action.edit",
+  "navigation.indexes",
+  "search.share",
+  "navigation.instant",
+  "navigation.tracking",
+  "navigation.path",
+  "navigation.top",
+  "content.code.annotate",
+]
+
+[project.theme.font]
+text = "Roboto"
+code = "Roboto Mono"
+
+[project.theme.icon]
+# set the icon for "edit this page"
+edit = "material/pencil"
+
+# Palette toggle for automatic mode
+[[project.theme.palette]]
+media  = "(prefers-color-scheme)"
+toggle = {icon = "material/brightness-auto", name = "Switch to light mode"}
+
+# Palette toggle for light mode
+[[project.theme.palette]]
+media   = "(prefers-color-scheme: light)"
+scheme  = "default"
+primary = "white"
+accent  = "blue"
+toggle  = {icon = "material/brightness-7", name = "Switch to dark mode"}
+
+# Palette toggle for dark mode
+[[project.theme.palette]]
+media   = "(prefers-color-scheme: dark)"
+scheme  = "slate"
+primary = "white"
+accent  = "blue"
+toggle  = {icon = "material/brightness-4", name = "Switch to light mode"}
+
+[project.plugins.search]
+# The search dialog is rendered into a shadow root at runtime, so its font
+# sizes and contrast cannot be set from here or from extra_css. Until zensical
+# adds styling hooks, docs/javascripts/search-styling.js patches the shadow
+# root and docs/stylesheets/extra.css supplies the palette it uses.
+# TODO: drop that workaround once these are configurable here.
+
+# autorefs is built into zensical, but has to be enabled explicitly
+[project.plugins.autorefs]
+
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.def_list]
+[project.markdown_extensions.footnotes]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.tables]
+# convert ascii dashes, quotes and ellipses to their HTML equivalents
+[project.markdown_extensions.smarty]
+[project.markdown_extensions.pymdownx.arithmatex]
+generic = true
+# for captioning images
+[project.markdown_extensions.pymdownx.blocks.caption]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.emoji]
+emoji_index = "zensical.extensions.emoji.twemoji"
+emoji_generator = "zensical.extensions.emoji.to_svg"
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+[project.markdown_extensions.pymdownx.snippets]
+check_paths = true
+[project.markdown_extensions.pymdownx.superfences]
+custom_fences = [
+  {name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format"},
+]
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+[project.markdown_extensions.toc]
+permalink = true

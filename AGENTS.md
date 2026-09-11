@@ -8,10 +8,10 @@ Netstack holds reference documentation and tools for describing and diagnosing t
 
 | Path | Contents |
 |---|---|
-| `docs/` | The documentation, built with Material for MkDocs. |
+| `docs/` | The documentation, built with Zensical. |
 | `docs/contributing.md` | The writing guide. Authoritative for everything under `docs/`. |
 | `bin/` | Three standalone `uv` scripts — `system-stack`, `user-stack`, `spack-db` — and the modules they share. |
-| `mkdocs.yml` | Site configuration and the navigation tree. |
+| `zensical.toml` | Site configuration and the navigation tree. |
 | `site/` | Generated output. Never edit it, and never commit it. |
 
 ## Before editing anything under `docs/`
@@ -30,7 +30,7 @@ The rules that are easiest to break by accident:
 7. Do not add a FAQ. Answers belong in the page that covers the topic.
 
 Component pages under `docs/packages/` all share one fixed shape, which is documented at the end of `docs/packages/index.md`.
-Follow it when adding a component, and add the new page to the `nav` tree in `mkdocs.yml`.
+Follow it when adding a component, and add the new page to the `nav` tree in `zensical.toml`.
 
 ## Checking your work
 
@@ -42,7 +42,7 @@ Follow it when adding a component, and add the new page to the `nav` tree in `mk
 ./serve
 ```
 
-`./serve` runs mkdocs through `uv tool run`, so [uv](https://docs.astral.sh/uv/getting-started/installation/) has to be installed, but no virtual environment is needed.
+`./serve` runs zensical through `uv tool run`, so [uv](https://docs.astral.sh/uv/getting-started/installation/) has to be installed, but no virtual environment is needed.
 A `--strict` build has to pass before a documentation change is finished.
 
 `--strict` does not catch a reference that is defined but misspelled at the point of use, so check that new references resolve in the generated HTML under `site/`, or by following the link in the local preview.
