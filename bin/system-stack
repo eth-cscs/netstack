@@ -46,12 +46,34 @@ PACKAGES = {
     'xpmem':           ['cray-libxpmem-devel', 'xpmem'],
 }
 
-# The columns of the component table that this side of the stack can fill.
-# There is no runtime resolution here, so no "Found via", and no dag-hash.
-COLUMNS = ('name', 'version', 'shs', 'origin', 'prefix')
+# Where the NVIDIA driver installs its userspace stub. The package that owns it
+# is versioned by driver branch (`nvidia-compute-G07-590.48.01-...`), so unlike
+# the rest of PACKAGES it cannot be queried by a fixed name; it is looked up by
+# path instead, the same way `user-stack` finds it on a host it walks.
+_NVIDIA_LIBCUDA_PATH = '/usr/lib64/libcuda.so.1'
 
 
-def collect_components():
+def _cuda_driver_row(driver):
+    """The 'cuda-driver' component: the NVIDIA userspace driver stub.
+
+    Its version is the running driver (`nvidia-smi`), the same value
+    `user-stack` reports for this component — the two tools compare it
+    field by field. `user-stack` finds the library by walking a resolved
+    dependency tree; system-stack has none to walk, so it asks the RPM
+    database who owns the well-known path instead. This is the same split
+    already used for `cxi-driver`: a simple system-side lookup standing in
+    for a more elaborate one on the user side.
+    """
+    if not driver:
+        return netstack.component('cuda-driver')
+    record = rpmdb.owners([_NVIDIA_LIBCUDA_PATH]).get(_NVIDIA_LIBCUDA_PATH)
+    row = (netstack.from_rpm('cuda-driver', record) if record
+           else netstack.component('cuda-driver'))
+    row['version'], row['version_source'] = driver, 'runtime'
+    return row
+
+
+def collect_components(driver):
     """Query all components and return a list of records.
 
     A component that is not installed keeps its row, with no origin: that a
@@ -63,6 +85,7 @@ def collect_components():
         record = next((found[rpm] for rpm in rpms if rpm in found), None)
         rows.append(netstack.from_rpm(name, record) if record
                     else netstack.component(name))
+    rows.append(_cuda_driver_row(driver))
     return rows
 
 
@@ -86,18 +109,24 @@ def _read_os_release():
     return props
 
 
-def collect_properties():
-    """Return a list of {key, value} dicts describing system properties."""
+def collect_properties(driver, max_cuda):
+    """Return a list of {key, value} dicts describing system properties.
+
+    `max_cuda` is the maximum CUDA version the driver supports, not the CUDA
+    version in use — that is a property of the user half of the stack, and
+    `user-stack` reports it as the `cuda` component. The driver's own version
+    is not a property either: it is the `cuda-driver` component, comparable
+    field by field against the same component on the user side.
+    """
     os_release = _read_os_release()
     name = os_release.get('NAME', '')
     version_id = os_release.get('VERSION_ID', '')
-    driver, cuda = netstack.nvidia_versions()
 
     pairs = [
         ('os', '{} {}'.format(name, version_id) if name and version_id else None),
         ('cluster', os.environ.get('CLUSTER_NAME')),
-        ('nvidia-driver', driver),
-        ('cuda', cuda),
+        ('gpu-vendor', 'nvidia' if driver else None),
+        ('max-cuda-version', max_cuda),
     ]
     return [{'key': k, 'value': v} for k, v in pairs if v]
 
@@ -153,6 +182,10 @@ def collect_gcc_data():
     return rows
 
 
+# The columns of the component table that this side of the stack can fill.
+# There is no runtime resolution here, so no "Found via", and no dag-hash.
+COLUMNS = ('name', 'version', 'shs', 'origin', 'prefix')
+
 # A GCC row is not a component — the three compiler drivers have no counterpart
 # in a shared record — but it is still a table, and it is drawn by the same
 # renderer so that its pretty, markdown and JSON forms cannot drift apart.
@@ -179,8 +212,9 @@ if __name__ == '__main__':
     netstack.add_format_argument(parser)
     args = parser.parse_args()
 
-    prop_rows = collect_properties()
-    rows      = collect_components()
+    driver, max_cuda = netstack.nvidia_versions()
+    prop_rows = collect_properties(driver, max_cuda)
+    rows      = collect_components(driver)
     gcc_rows  = collect_gcc_data()
 
     if args.format == 'json':

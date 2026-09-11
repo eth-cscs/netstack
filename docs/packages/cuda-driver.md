@@ -23,9 +23,10 @@ This forward compatibility is why the toolkit exists as its own [`cuda`][ref-pkg
 
 ## System or user
 
-The CUDA driver is always a system component.
-[`user-stack`][ref-tools-user-stack] resolves `libcuda.so.1` and finds it under `/usr/lib64`. The origin is host, and the tool finds it through the default path, never under the uenv mount.
-That is the correct and expected result.
+The CUDA driver is always a system component, and both tools report it as one, each finding it a different way.
+[`system-stack`][ref-tools-system-stack] has no dependency tree to walk, so it looks up the well-known path of the driver's userspace library, `/usr/lib64/libcuda.so.1`, and asks the RPM database who owns it — the same kind of simple, name-agnostic lookup [`cxi-driver`][ref-pkg-cxi-driver] needs on the system side.
+[`user-stack`][ref-tools-user-stack] resolves the same library by walking a uenv's resolved dependency tree, and finds it under `/usr/lib64`. The origin is host, never under the uenv mount.
+That is the correct and expected result, and the two reports agree field by field: same version, same owning package, same prefix.
 
 ## Identifying it
 
@@ -34,10 +35,10 @@ $ nvidia-smi --version
 ```
 
 On the reference node, the driver is `590.48.01`, and the maximum CUDA version is `13.1`. So a uenv toolkit in the `12.x` series runs against it.
-[`system-stack`][ref-tools-system-stack] reports both values, as the `nvidia-driver` and `cuda` properties.
+[`system-stack`][ref-tools-system-stack] reports the driver version as the `cuda-driver` component, and the maximum CUDA version as the `max-cuda-version` property.
 
 !!! note "Two numbers called CUDA"
-    The `cuda` value from `nvidia-smi`, for example `13.1`, is the maximum that the driver supports.
+    `max-cuda-version`, read from `nvidia-smi`, for example `13.1`, is the maximum that the driver supports.
     The [CUDA toolkit][ref-pkg-cuda] version in the uenv, for example `12.9.0`, is the version your code links against.
     The first is the maximum allowed, and the second is the actual version in use.
 

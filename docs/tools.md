@@ -69,7 +69,7 @@ A component that both tools see is the same component in both reports.
 ## system-stack
 
 `system-stack` reports the [system components][ref-index-system]: the drivers and base-image libraries. It queries these from the RPM database.
-It also reports a few system properties: the OS, the cluster, the NVIDIA driver and CUDA versions, and the installed GCC toolchains.
+It also reports a few system properties: the OS, the cluster, the GPU vendor, the maximum CUDA version the driver supports, and the installed GCC toolchains. The driver's own version is not a property — it is the [`cuda-driver`][ref-pkg-cuda-driver] component below, so that it compares field by field against the same component in a `user-stack` report.
 
 ```bash title="Reporting the system half of the stack"
 ./bin/system-stack
@@ -91,6 +91,9 @@ The `shs` field is the [HPE Slingshot Host Software][ref-shs] release that the p
 | vast            | 4.5.8     | -      | rpm      | /                         |
 | lustre          | 2.15.7    | -      | rpm      | /usr                      |
 | xpmem           | 1.0.1     | -      | rpm      | /opt/xpmem                |
+| cuda-driver     | 590.48.01 | -      | rpm      | /usr                      |
+
+`cuda-driver` is looked up differently from the rest of the table: its package is versioned by driver branch (`nvidia-compute-G07-…`), so it cannot be queried by a fixed name like the others. `system-stack` looks up the well-known path of the driver's userspace library instead, and asks the RPM database who owns it. Its version comes from `nvidia-smi`, the same probe behind the `max-cuda-version` property.
 
 The version is the plain release. This is not always the whole of what the RPM declares.
 A vendor build can fuse its own stamp onto the tail of the version. For example, the Lustre client is `2.15.7.2_cray_39_g654b360`. `system-stack` reports only the leading run of numeric components, and leaves the rest in the origin, where the `package` field names the exact build.
