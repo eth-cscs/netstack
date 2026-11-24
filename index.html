@@ -1041,6 +1041,8 @@
       
         
       
+        
+      
     
     
     
@@ -1103,6 +1105,33 @@
     
   
   Analysing a uenv
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./analysis/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Measured effect of settings
 
     
   </span>
@@ -1265,7 +1294,7 @@ Together, these determine how an application communicates.</p>
 <ol>
 <li><strong>drivers</strong>, such as the CUDA driver and the Slingshot <a class="autorefs autorefs-internal" title="cxi-driver" href="packages/cxi-driver/#cxi-driver">CXI driver</a>,</li>
 <li><strong>libraries</strong>, such as <a class="autorefs autorefs-internal" href="packages/libfabric/#libfabric">libfabric</a>, <a class="autorefs autorefs-internal" href="packages/libcxi/#libcxi">libcxi</a>, <a class="autorefs autorefs-internal" title="cray-mpich" href="packages/cray-mpich/#cray-mpich">MPI</a>, <a class="autorefs autorefs-internal" title="nccl" href="packages/nccl/#nccl">NCCL</a> and <a class="autorefs autorefs-internal" title="xpmem" href="packages/xpmem/#xpmem">XPMEM</a>, and</li>
-<li><strong>environment variables</strong>, such as <code>MPICH_GPU_SUPPORT_ENABLED</code>, <code>FI_MR_CACHE_MONITOR</code> and <code>NCCL_NET_PLUGIN</code>.</li>
+<li><strong>environment variables</strong>, such as <code>MPICH_GPU_SUPPORT_ENABLED</code>, <code>FI_MR_CACHE_MONITOR</code> and <code>NCCL_NET</code>.</li>
 </ol>
 <p><a href="" id="ref-index-system-user"></a></p>
 <h2 id="system-and-user-components">System and user components<a class="headerlink" href="#system-and-user-components" title="Permanent link">&para;</a></h2>
@@ -1307,7 +1336,7 @@ There, they replace the system copy.</p>
 </tr>
 <tr>
 <td><a class="autorefs autorefs-internal" href="envvars/#environment-variables">Environment variables</a></td>
-<td>The netstack-relevant variables, grouped by the component they affect.</td>
+<td>The variables that CSCS sets, recommends or has measured, with the value in each source.</td>
 </tr>
 <tr>
 <td><a class="autorefs autorefs-internal" href="packages/#packages">Packages</a></td>

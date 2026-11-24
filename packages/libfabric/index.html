@@ -1067,6 +1067,8 @@
       
         
       
+        
+      
     
     
     
@@ -1129,6 +1131,33 @@
     
   
   Analysing a uenv
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Measured effect of settings
 
     
   </span>
@@ -1527,8 +1556,8 @@ See <a class="autorefs autorefs-internal" title="Version namespaces" href="../..
 <code>2.3.1</code> is the only one of the three with the modern layout. In this layout, <code>rpm -q</code> reports version and release as separate fields, and the package name stays plain <code>libfabric</code>.
 No RPM owns <code>1.22.0</code>. It is the <a class="autorefs autorefs-internal" title="The component record" href="../../tools/#the-component-record"><code>host</code></a> case: a file placed on the host outside the RPM database. So <code>rpm -qf</code> on anything under that tree returns empty.</p>
 <h2 id="environment-variables">Environment variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
-<p>libfabric reads the <code>FI_*</code> family, including the CXI-specific <code>FI_CXI_*</code> variables. <a class="autorefs autorefs-internal" title="libfabric" href="../../envvars/#libfabric">Environment variables</a> lists this family.
-<code>FI_MR_CACHE_MONITOR</code> and <code>FI_CXI_RX_MATCH_MODE</code> are frequent diagnostic targets.</p>
+<p>libfabric reads the <code>FI_*</code> family, including the <code>FI_CXI_*</code> variables of the CXI provider. <a class="autorefs autorefs-internal" title="libfabric" href="../../envvars/#libfabric">Environment variables</a> lists the values that CSCS sets.
+The <code>FI_CXI_RDZV_*</code> variables decide whether a small message uses the eager protocol. <a class="autorefs autorefs-internal" title="Eager and rendezvous messages" href="../../analysis/settings/#eager-and-rendezvous-messages">Measured effect of settings</a> gives their effect on MPI and NCCL.</p>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../libcxi/#libcxi">libcxi</a> is the user-space library that the CXI provider calls.</li>

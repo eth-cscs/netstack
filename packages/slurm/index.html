@@ -863,6 +863,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Environment variables
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#related" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1039,6 +1050,8 @@
       
         
       
+        
+      
     
     
     
@@ -1101,6 +1114,33 @@
     
   
   Analysing a uenv
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Measured effect of settings
 
     
   </span>
@@ -1201,6 +1241,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Identifying it
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Environment variables
       </span>
     </span>
   </a>
@@ -1386,6 +1437,9 @@ The RPM is <code>slurm</code>, version <code>25.5.4</code> on the reference node
 <div class="language-console highlight"><span class="filename">Listing the PMI plugins that Slurm can provide</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>srun<span class="w"> </span>--mpi<span class="o">=</span>list
 </span></code></pre></div>
 <p><a class="autorefs autorefs-internal" href="../../tools/#system-stack"><code>system-stack</code></a> reports the installed Slurm version.</p>
+<h2 id="environment-variables">Environment variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
+<p><code>srun</code> reads <code>SLURM_NETWORK</code> as the default of its <code>--network</code> option.
+NCCL jobs on Alps need the value <code>disable_rdzv_get</code>. <a class="autorefs autorefs-internal" title="Slurm" href="../../envvars/#slurm">Environment variables</a> gives the sources, and how a uenv view sets it.</p>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../cray-pmi/#cray-pmi">cray-pmi</a> provides the PMI libraries that the launcher drives.</li>

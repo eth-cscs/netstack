@@ -1067,6 +1067,8 @@
       
         
       
+        
+      
     
     
     
@@ -1129,6 +1131,33 @@
     
   
   Analysing a uenv
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Measured effect of settings
 
     
   </span>
@@ -1479,8 +1508,9 @@ Their own pages cover them.</p>
 </tbody>
 </table>
 <h2 id="environment-variables">Environment variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
-<p>Cray MPICH reads the <code>MPICH_*</code> family. <a class="autorefs autorefs-internal" title="Cray MPICH" href="../../envvars/#cray-mpich">Environment variables</a> lists this family.
-The variables that matter most for the netstack are <code>MPICH_GPU_SUPPORT_ENABLED</code>, <code>MPICH_OFI_NIC_POLICY</code> and <code>MPICH_SMP_SINGLE_COPY_MODE</code>. <code>MPICH_GPU_SUPPORT_ENABLED</code> needs <a class="autorefs autorefs-internal" href="../cray-gtl/#cray-gtl">cray-gtl</a>.</p>
+<p>Cray MPICH reads the <code>MPICH_*</code> family. <a class="autorefs autorefs-internal" title="Cray MPICH and MPICH" href="../../envvars/#cray-mpich-and-mpich">Environment variables</a> lists the values that CSCS sets.
+<code>MPICH_GPU_SUPPORT_ENABLED</code> turns on GPU-aware MPI, and needs <a class="autorefs autorefs-internal" href="../cray-gtl/#cray-gtl">cray-gtl</a>.
+Cray MPICH sends through <a class="autorefs autorefs-internal" href="../libfabric/#libfabric">libfabric</a>, so the <code>FI_*</code> settings of an environment change its performance. See <a class="autorefs autorefs-internal" title="Eager and rendezvous messages" href="../../analysis/settings/#eager-and-rendezvous-messages">eager and rendezvous messages</a>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Start a diagnosis by printing the settings</p>
 <p>Set <code>MPICH_ENV_DISPLAY=1</code> to print every MPICH variable and its value at startup. This shows the resolved value of each default, not only the variables you set.</p>

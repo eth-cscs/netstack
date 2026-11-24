@@ -1050,6 +1050,8 @@
       
         
       
+        
+      
     
     
     
@@ -1112,6 +1114,33 @@
     
   
   Analysing a uenv
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Measured effect of settings
 
     
   </span>
@@ -1433,8 +1462,9 @@ It links the <a class="autorefs autorefs-internal" title="cuda" href="../cuda/#c
 This is the fastest way to confirm that traffic goes over the fabric and not a fallback.</p>
 </div>
 <h2 id="environment-variables">Environment variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
-<p>NCCL reads the <code>NCCL_*</code> family of variables. See <a class="autorefs autorefs-internal" title="NCCL" href="../../envvars/#nccl">Environment variables</a> for the full list.
-For the netstack, the important variables are <code>NCCL_NET_PLUGIN</code>, <code>NCCL_NET</code> and <code>NCCL_DEBUG</code>. <code>NCCL_NET_PLUGIN</code> selects <a class="autorefs autorefs-internal" href="../aws-ofi-nccl/#aws-ofi-nccl">aws-ofi-nccl</a>.</p>
+<p>NCCL reads the <code>NCCL_*</code> family of variables. <a class="autorefs autorefs-internal" title="NCCL" href="../../envvars/#nccl">Environment variables</a> lists the values that CSCS sets.
+<code>NCCL_NET="AWS Libfabric"</code> selects <a class="autorefs autorefs-internal" href="../aws-ofi-nccl/#aws-ofi-nccl">aws-ofi-nccl</a>.
+NCCL jobs on Alps also need the Slurm network option <a class="autorefs autorefs-internal" title="Slurm" href="../../envvars/#slurm"><code>disable_rdzv_get</code></a>.</p>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../aws-ofi-nccl/#aws-ofi-nccl">aws-ofi-nccl</a> is the libfabric and CXI transport plugin.</li>

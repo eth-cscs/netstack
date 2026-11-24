@@ -1050,6 +1050,8 @@
       
         
       
+        
+      
     
     
     
@@ -1112,6 +1114,33 @@
     
   
   Analysing a uenv
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Measured effect of settings
 
     
   </span>
@@ -1430,8 +1459,8 @@ Like NCCL, it depends on libfabric and CXI. The host or the uenv can provide the
 <p>The first check is whether <code>libnccl-net-ofi.so</code>, or <code>libnccl-net.so</code>, is present in the view.
 Set <code>NCCL_DEBUG=INFO</code>. When the plugin loads, NCCL prints <code>Using network AWS Libfabric</code>. This confirms that the plugin is in use.</p>
 <h2 id="environment-variables">Environment variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h2>
-<p>You tune aws-ofi-nccl through the <code>OFI_NCCL_*</code> family, and you select it through NCCL&rsquo;s <code>NCCL_NET_PLUGIN</code>.
-<a class="autorefs autorefs-internal" title="aws-ofi-nccl" href="../../envvars/#aws-ofi-nccl">Environment variables</a> lists both.</p>
+<p>aws-ofi-nccl reads the <code>OFI_NCCL_*</code> family. No environment at CSCS sets a variable of this family.
+NCCL selects the plugin through <code>NCCL_NET="AWS Libfabric"</code>. <a class="autorefs autorefs-internal" title="NCCL" href="../../envvars/#nccl">Environment variables</a> lists the NCCL settings.</p>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../nccl/#nccl">nccl</a> is the library that this plugin plugs into.</li>
