@@ -41,7 +41,7 @@ See [version namespaces][ref-analysis-uenv-version-namespaces].
 ## Environment variables
 
 The launcher populates most of the `PMIX_*` family. It covers the server URI, the rank and the namespace.
-[Environment variables][ref-envvars-launcher] lists it.
+[Environment variables][ref-envvars-launcher] describes it. `PMIX_MCA_psec=native` is a [setting for Open MPI][ref-envvars-openmpi].
 
 ## Related
 

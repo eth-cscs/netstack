@@ -8,7 +8,7 @@ Together, these determine how an application communicates.
 
 1. **drivers**, such as the CUDA driver and the Slingshot [CXI driver][ref-pkg-cxi-driver],
 2. **libraries**, such as [libfabric][ref-pkg-libfabric], [libcxi][ref-pkg-libcxi], [MPI][ref-pkg-cray-mpich], [NCCL][ref-pkg-nccl] and [XPMEM][ref-pkg-xpmem], and
-3. **environment variables**, such as `MPICH_GPU_SUPPORT_ENABLED`, `FI_MR_CACHE_MONITOR` and `NCCL_NET_PLUGIN`.
+3. **environment variables**, such as `MPICH_GPU_SUPPORT_ENABLED`, `FI_MR_CACHE_MONITOR` and `NCCL_NET`.
 
 
 [](){#ref-index-system-user}
@@ -47,6 +47,6 @@ The [`user-stack`][ref-tools-user-stack] tool reports user components.
 |---|---|
 | [Tools][ref-tools]                        | The CLI tools for analysing and reporting netstacks. |
 | [Analysing an environment][ref-analysis]  | The method to find what an environment contains. |
-| [Environment variables][ref-envvars]      | The netstack-relevant variables, grouped by the component they affect. |
+| [Environment variables][ref-envvars]      | The variables that CSCS sets, recommends or has measured, with the value in each source. |
 | [Packages][ref-pkg]                       | One reference page per component. |
 | [Contributing][ref-contributing]          | How to build the documentation, and how to write it. |

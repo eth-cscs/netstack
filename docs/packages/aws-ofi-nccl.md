@@ -42,8 +42,8 @@ Set `NCCL_DEBUG=INFO`. When the plugin loads, NCCL prints `Using network AWS Lib
 
 ## Environment variables
 
-You tune aws-ofi-nccl through the `OFI_NCCL_*` family, and you select it through NCCL's `NCCL_NET_PLUGIN`.
-[Environment variables][ref-envvars-aws-ofi-nccl] lists both.
+aws-ofi-nccl reads the `OFI_NCCL_*` family. No environment at CSCS sets a variable of this family.
+NCCL selects the plugin through `NCCL_NET="AWS Libfabric"`. [Environment variables][ref-envvars-nccl] lists the NCCL settings.
 
 ## Related
 

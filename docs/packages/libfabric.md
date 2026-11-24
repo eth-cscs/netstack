@@ -77,8 +77,8 @@ No RPM owns `1.22.0`. It is the [`host`][ref-tools-components] case: a file plac
 
 ## Environment variables
 
-libfabric reads the `FI_*` family, including the CXI-specific `FI_CXI_*` variables. [Environment variables][ref-envvars-libfabric] lists this family.
-`FI_MR_CACHE_MONITOR` and `FI_CXI_RX_MATCH_MODE` are frequent diagnostic targets.
+libfabric reads the `FI_*` family, including the `FI_CXI_*` variables of the CXI provider. [Environment variables][ref-envvars-libfabric] lists the values that CSCS sets.
+The `FI_CXI_RDZV_*` variables decide whether a small message uses the eager protocol. [Measured effect of settings][ref-analysis-settings-rdzv] gives their effect on MPI and NCCL.
 
 ## Related
 

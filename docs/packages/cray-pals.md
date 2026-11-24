@@ -33,7 +33,7 @@ If those variables are absent, and only `PMI_*` and `SLURM_*` are present, Slurm
 
 ## Environment variables
 
-[Environment variables][ref-envvars-launcher] lists the `PALS_*` family.
+[Environment variables][ref-envvars-launcher] describes the `PALS_*` family.
 
 ## Related
 

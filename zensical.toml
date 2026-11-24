@@ -41,6 +41,7 @@ nav = [
   {"Analysis" = [
     "analysis/index.md",
     {"Analysing a uenv" = "analysis/uenv.md"},
+    {"Measured effect of settings" = "analysis/settings.md"},
   ]},
   {"Contributing" = "contributing.md"},
 ]

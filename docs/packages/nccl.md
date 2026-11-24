@@ -43,8 +43,9 @@ The soname carries the full release. [`user-stack`][ref-tools-user-stack] reads 
 
 ## Environment variables
 
-NCCL reads the `NCCL_*` family of variables. See [Environment variables][ref-envvars-nccl] for the full list.
-For the netstack, the important variables are `NCCL_NET_PLUGIN`, `NCCL_NET` and `NCCL_DEBUG`. `NCCL_NET_PLUGIN` selects [aws-ofi-nccl][ref-pkg-aws-ofi-nccl].
+NCCL reads the `NCCL_*` family of variables. [Environment variables][ref-envvars-nccl] lists the values that CSCS sets.
+`NCCL_NET="AWS Libfabric"` selects [aws-ofi-nccl][ref-pkg-aws-ofi-nccl].
+NCCL jobs on Alps also need the Slurm network option [`disable_rdzv_get`][ref-envvars-slurm].
 
 ## Related
 

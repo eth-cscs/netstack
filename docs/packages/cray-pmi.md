@@ -33,7 +33,7 @@ If `PMI_RANK`, `PMI_SIZE` and `PMI_CONTROL_PORT` are present in the environment,
 
 ## Environment variables
 
-The launcher sets the `PMI_*` family with identity and rendezvous information. [Environment variables][ref-envvars-launcher] lists this family.
+The launcher sets the `PMI_*` family with identity and rendezvous information. [Environment variables][ref-envvars-launcher] describes this family.
 
 ## Related
 

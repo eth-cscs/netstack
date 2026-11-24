@@ -53,7 +53,7 @@ The MPI library is `libmpi.so.40` for Open MPI, rather than `libmpi_*.so.12` for
 
 `OMPI_*` variables and MCA parameters configure Open MPI, not `MPICH_*` variables. `PMIX_*` variables configure its launch.
 The fabric-level `FI_*` variables still apply.
-[Environment variables][ref-envvars-openmpi] lists all three families.
+[Environment variables][ref-envvars-openmpi] lists the values that CSCS sets.
 
 ## Related
 

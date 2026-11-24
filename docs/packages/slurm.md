@@ -37,6 +37,11 @@ $ srun --mpi=list
 
 [`system-stack`][ref-tools-system-stack] reports the installed Slurm version.
 
+## Environment variables
+
+`srun` reads `SLURM_NETWORK` as the default of its `--network` option.
+NCCL jobs on Alps need the value `disable_rdzv_get`. [Environment variables][ref-envvars-slurm] gives the sources, and how a uenv view sets it.
+
 ## Related
 
 * [cray-pmi][ref-pkg-cray-pmi] provides the PMI libraries that the launcher drives.

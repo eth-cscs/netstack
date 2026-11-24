@@ -28,6 +28,7 @@ The rules that are easiest to break by accident:
 5. Follow the Voice section: state facts rather than framing them, keep bold for definitions and warnings, and prefer a full stop to a dash.
 6. Use admonitions for notes, warnings and examples instead of writing "Note that ..." in the prose.
 7. Do not add a FAQ. Answers belong in the page that covers the topic.
+8. Do not add an environment variable from a manual page, upstream documentation or general knowledge. `docs/envvars.md` lists a variable only when a named source at CSCS sets it, or when a measurement on Alps is recorded in `docs/analysis/settings.md`. Its *Adding a variable* section gives the procedure.
 
 Component pages under `docs/packages/` all share one fixed shape, which is documented at the end of `docs/packages/index.md`.
 Follow it when adding a component, and add the new page to the `nav` tree in `zensical.toml`.

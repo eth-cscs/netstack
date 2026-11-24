@@ -39,7 +39,7 @@ On Alps, the module and `libxpmem.so` come from the host at `/opt/xpmem`. They c
 
 ## Environment variables
 
-`MPICH_SMP_SINGLE_COPY_MODE` selects `XPMEM`, as opposed to `CMA` or `NONE`. [Environment variables][ref-envvars-mpich] lists it.
+`MPICH_SMP_SINGLE_COPY_MODE` selects `XPMEM`, as opposed to `CMA` or `NONE`. No environment at CSCS sets it.
 
 ## Related
 

@@ -46,7 +46,7 @@ To confirm compatibility, compare that version against the maximum CUDA version 
 
 ## Environment variables
 
-[Environment variables][ref-envvars-cuda] lists the `CUDA_*` family.
+[Environment variables][ref-envvars-cuda] lists the `CUDA_*` variables that CSCS sets.
 The two most important variables here are `CUDA_VISIBLE_DEVICES` and `CUDA_HOME`. `CUDA_VISIBLE_DEVICES` affects GPU-to-NIC affinity.
 
 ## Related

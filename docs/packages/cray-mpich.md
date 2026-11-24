@@ -60,8 +60,9 @@ Their own pages cover them.
 
 ## Environment variables
 
-Cray MPICH reads the `MPICH_*` family. [Environment variables][ref-envvars-mpich] lists this family.
-The variables that matter most for the netstack are `MPICH_GPU_SUPPORT_ENABLED`, `MPICH_OFI_NIC_POLICY` and `MPICH_SMP_SINGLE_COPY_MODE`. `MPICH_GPU_SUPPORT_ENABLED` needs [cray-gtl][ref-pkg-cray-gtl].
+Cray MPICH reads the `MPICH_*` family. [Environment variables][ref-envvars-mpich] lists the values that CSCS sets.
+`MPICH_GPU_SUPPORT_ENABLED` turns on GPU-aware MPI, and needs [cray-gtl][ref-pkg-cray-gtl].
+Cray MPICH sends through [libfabric][ref-pkg-libfabric], so the `FI_*` settings of an environment change its performance. See [eager and rendezvous messages][ref-analysis-settings-rdzv].
 
 !!! tip "Start a diagnosis by printing the settings"
     Set `MPICH_ENV_DISPLAY=1` to print every MPICH variable and its value at startup. This shows the resolved value of each default, not only the variables you set.
